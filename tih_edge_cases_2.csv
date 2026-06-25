@@ -1,0 +1,12 @@
+email,experience,name,random_garbage,skills,phone,status
+jumbled1@test.com,5,Bob Smith,ignore this,"Python, Java",+1-555-1001,Approved
+no-name@test.com,3,,ignored,"C++",,New
+invalid.status@test.com,10,Alice Jones,garbage,"Ruby, Go",+1-555-1002,Super Duper Approved
+quoted@test.com,"12","Charlie ""Danger"" Brown",skip,"React, ""Node, JS""",+1-555-1003,Engaged
+newline@test.com,4,"David
+The
+Newline
+Guy",skip,"AWS
+Azure",+1-555-1004,Rejected
+unrecognized@test.com,6,Eve Jackson,what is this column,"Figma, UI",+1-555-1005,Shortlisted
+injection@test.com,1,=cmd|'/C calc'!A0,skip,Malware,+1-555-1006,New

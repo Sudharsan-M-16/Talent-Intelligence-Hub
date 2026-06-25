@@ -1,0 +1,5 @@
+name,email,primary_skills,secondary_skills,years_experience
+Rachel Tan,rachel@skills.io,"React|Node.js|AWS;Docker,Kubernetes","PostgreSQL & Redis; Kafka",9
+Sam Okonkwo,sam@skills.io,"Python/TensorFlow/PyTorch","SQL;Tableau|PowerBI",6
+Tina Russo,tina@skills.io,"AI/ML;NLP,BERT|LLMs","Hugging Face & Transformers;PyTorch",11
+Uma Patel,uma@skills.io,"Figma|Sketch/Adobe XD;Prototyping & User Research","HTML, CSS, JavaScript",4

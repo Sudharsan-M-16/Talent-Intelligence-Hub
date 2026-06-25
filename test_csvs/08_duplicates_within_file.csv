@@ -1,0 +1,7 @@
+name,email,phone,status,location
+Victor Stone,victor@dup.com,+1-555-600-0001,New,Chicago
+Victor Stone,victor@dup.com,+1-555-600-0001,New,Chicago
+Wendy Park,wendy@dup.com,+1-555-600-0002,Approved,Seattle
+Wendy Park Different Name,wendy@dup.com,,Shortlisted,Seattle
+Xavier Ross,xavier@dup.com,+1-555-600-0003,New,Portland
+Xavier Ross,,+1-555-600-0003,Engaged,Portland

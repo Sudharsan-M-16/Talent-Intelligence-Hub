@@ -1,0 +1,12 @@
+{
+  "name": "tih",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "lint": "echo \"Add lint scripts in apps/web and apps/api\"",
+    "typecheck": "echo \"Add typecheck scripts in apps/web and apps/api\"",
+    "dev": "echo \"Run dev inside apps/web or apps/api\""
+  }
+}

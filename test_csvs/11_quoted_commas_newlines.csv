@@ -1,0 +1,10 @@
+name,email,phone,notes,primary_skills
+"Smith, John",john.smith@quotes.com,+1-555-900-0001,"Has experience in AI, ML, and cloud",  "React, Node.js"
+"Charlie ""The Hacker"" Brown",charlie@quotes.com,+1-555-900-0002,"Loves ""innovation"" and ""disruption""","Python, Go"
+"David
+Multiline
+Name",david@multiline.com,+1-555-900-0003,"Works across
+multiple lines
+of experience","AWS
+Azure
+GCP"

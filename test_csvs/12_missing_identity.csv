@@ -1,0 +1,6 @@
+name,email,phone,status,location,primary_skills
+,,,,New York,Python
+,,,Approved,London,Java
+Emma Valid,emma@valid.com,+1-555-101-0001,Shortlisted,Paris,"React, TypeScript"
+,only.email@test.com,,New,Berlin,C++
+,,+1-555-101-0002,Approved,Tokyo,Go

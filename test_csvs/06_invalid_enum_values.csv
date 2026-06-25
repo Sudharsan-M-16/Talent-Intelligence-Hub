@@ -1,0 +1,6 @@
+name,email,phone,status,source,talent_type
+Marcus Webb,marcus@test.com,+1-555-500-0001,SUPER APPROVED,LINKED IN,full time employee
+Nadia Ali,nadia@test.com,+1-555-500-0002,waiting for review,whatsapp msg,free lancer
+Omar Hassan,omar@test.com,+1-555-500-0003,shortlist,ref,training expert
+Priya Dev,priya@test.com,+1-555-500-0004,REJECTED,job_portal,MENTOR COACH
+Quincy Adams,quincy@test.com,+1-555-500-0005,xyz_invalid,email blast,unknown type xyz

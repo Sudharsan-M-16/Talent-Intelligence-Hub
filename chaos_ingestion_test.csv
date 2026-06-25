@@ -1,0 +1,9 @@
+Header1,Header2,Garbage,EmailField,NameField
+jumbled@email.com,+1-234-567-8900,Software Engineer,John Doe,15
+,,,
+Only Name,,,,
+,,,,jane@onlyemail.com
+"React, Node, AWS",Jane Smith,Approved,+44-7700-900077,jane.smith@tech.co.uk
+5,5,5,5,5
+This is a random note that is very long and has commas, but it's not skills,Bob Builder,bob@builder.com,Website,Employed
+=cmd|' /C calc'!A0,Injection,Test,,

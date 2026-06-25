@@ -1,0 +1,8 @@
+Random Header 1,email,GARBAGE COLUMN,STATUS FIELD,full name col,phone number here,random_junk,experience yrs,SKILLS LIST
+julia@chaos.com,+1-555-999-0001,Julia Torres,some garbage text,Approved,8,MORE GARBAGE,"React|Node.js;Docker",completely irrelevant data
+,,,,,,,, 
+=cmd,evil@inject.io,+1-555-999-0002,csv inject test,New,1,trash,Malware,exploit
+ken@real.com,+1-555-999-0003,Ken Watanabe,Actor turned Dev,Engaged,22,noise,"Python, AI, ML, Cloud",random
+,,no.name.email@test.com,Shortlisted,,+44-7911-000-001,junk,3,"Java, Kotlin"
+"Smith, Anna",anna.smith@nested.com,+1-555-999-0004,Shortlisted,9,noise,noise,"React,""Angular"",Vue",lots of noise here
+only_name_no_contact,,,,,,,, 

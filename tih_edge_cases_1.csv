@@ -1,0 +1,11 @@
+name,email,phone,skills,experience,status,source,location,talent_type,notes
+Normal Record,normal@test.com,+1-555-0001,"React, Node",5,Shortlisted,LinkedIn,NY,Employee,Perfect record
+Missing Email Phone,,,"Python, AWS",3,New,Referral,London,Consultant,Should import without contact info
+,noname@test.com,+1-555-0002,"Java",4,Approved,Manual,Tokyo,Employee,FAIL: Missing name
+,,,,,,,,,
+Just Name,,,,,,,,,Should import with only name
+Missing Experience,noexp@test.com,+1-555-0003,"Ruby",,New,Email,Berlin,Freelancer,Experience should be null/0
+Missing Skills,noskills@test.com,+1-555-0004,,6,Engaged,Job Portal,Paris,Contractor,Skills should be empty array
+Missing Status,nostatus@test.com,+1-555-0005,"C++",8,,Website,Sydney,Mentor,Status should default to New
+  Whitespace Hero  ,   spaces@test.com   ,   +1-000   ,   Go , Rust   ,   7   ,   Under Review   ,   Rome   ,   Speaker   ,   Should trim spaces   
+Trailing Commas,trail@test.com,+1-555-0006,"HTML",2,Rejected,Other,Madrid,Other,

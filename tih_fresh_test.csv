@@ -1,0 +1,16 @@
+name,email,phone,skills,experience,status,source,location,talent_type,notes
+John Smith,john.smith@tech-leaders.com,+1-555-0100,"React, Node.js, GraphQL, AWS",8,New,LinkedIn,New York,Employee,Strong full-stack developer
+Sarah Jenkins,sarah.j@innovate-ai.io,+44-20-7946-0101,"Python, TensorFlow, PyTorch, ML Ops",5,Under Review,Referral,London,Consultant,Great ML background
+Miguel Rodriguez,m.rodriguez@designco.net,+34-91-123-4567,"Figma, Sketch, UI/UX, User Research",6,Shortlisted,Website,Madrid,Freelancer,Excellent portfolio
+Emily Chen,emily.chen@finance-corp.com,+1-555-0102,"Financial Modeling, Excel, Strategy, Analytics",10,Approved,Job Portal,Chicago,Employee,Ready for final round
+David Okafor,d.okafor@agile-coaches.org,+234-800-123-4567,"Agile, Scrum, Coaching, Leadership",15,Engaged,Manual,Lagos,Trainer,Will conduct next workshop
+Yuki Tanaka,yuki.t@cloud-architects.jp,+81-3-1234-5678,"AWS, Azure, GCP, Kubernetes, Docker",12,Shortlisted,LinkedIn,Tokyo,Consultant,Multi-cloud certified
+Aisha Patel,a.patel@cyber-sec.com,+91-98765-43210,"Cybersecurity, Penetration Testing, CISSP, Python",7,New,Referral,Mumbai,Contractor,Cleared background check
+Marcus Johnson,marcus.j@marketing-gurus.net,+1-555-0103,"Digital Marketing, SEO, Content Strategy, Google Analytics",9,Under Review,WhatsApp,Los Angeles,Freelancer,
+Sophia Müller,sophia.m@data-insights.de,+49-30-123456,"SQL, Tableau, Power BI, R, Python",4,New,Email,Berlin,Employee,Recent grad with great potential
+Liam O'Connor,liam.o@sales-stars.com,+353-1-234-5678,"B2B Sales, CRM, Salesforce, Negotiation",8,Rejected,Job Portal,Dublin,Employee,Salary expectations too high
+Elena Rossi,elena.r@blockchain-devs.it,+39-06-12345678,"Solidity, Rust, Web3, Smart Contracts",5,Shortlisted,LinkedIn,Rome,Consultant,Strong Web3 portfolio
+Omar Al-Fayed,omar.a@devops-pros.ae,+971-4-123-4567,"CI/CD, Jenkins, Ansible, Terraform, Linux",11,Approved,Referral,Dubai,Contractor,Available immediately
+Chloe Tremblay,chloe.t@creative-writers.ca,+1-555-0104,"Copywriting, Editing, Content Marketing, SEO",6,New,Website,Toronto,Freelancer,
+Wei Lin,wei.l@hardware-eng.cn,+86-10-1234-5678,"Hardware Design, PCB Layout, C, Embedded Systems",14,Under Review,LinkedIn,Beijing,Employee,
+Fatima Zahra,fatima.z@hr-consulting.ma,+212-5-1234-5678,"HR Strategy, Talent Acquisition, Employee Relations",10,Shortlisted,Manual,Casablanca,Mentor,Great cultural fit
