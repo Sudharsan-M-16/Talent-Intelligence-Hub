@@ -1,5 +1,5 @@
 ﻿import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Plus, Grid3X3, List, Star, Heart, GitCompare,
@@ -102,6 +102,7 @@ function mapProfilesToColumns(
 
 export default function TalentListPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const profiles = useTalentStore((s) => s.profiles)
   const filters = useTalentStore((s) => s.filters)
   const viewMode = useTalentStore((s) => s.viewMode)
@@ -141,6 +142,25 @@ export default function TalentListPage() {
 
   // Debounced search
   const [searchInput, setSearchInput] = useState(filters.query || '')
+
+  // Apply URL params on mount (e.g. ?status=New from dashboard card click).
+  // Also clears any leftover search text when the filter is driven from outside.
+  useEffect(() => {
+    const statusParam = searchParams.get('status')
+    if (statusParam) {
+      const statuses = statusParam.split(',') as TalentStatus[]
+      useTalentStore.getState().setFilters({ status: statuses })
+      setSearchInput('')
+      // Strip the param from the URL so Back button works naturally
+      setSearchParams({}, { replace: true })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Keep search input in sync when filters.query is cleared externally
+  useEffect(() => {
+    if (!filters.query) setSearchInput('')
+  }, [filters.query])
 
   // Debounced search — 200ms delay prevents re-filtering on every keystroke
   const debouncedSearch = useDebounce(searchInput, 200)

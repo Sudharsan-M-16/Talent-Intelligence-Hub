@@ -114,8 +114,10 @@ export default function DashboardPage() {
   const navigate = useNavigate()
 
   const goFiltered = (status?: TalentStatus) => {
-    setFilters({ status: status ? [status] : undefined, query: undefined })
-    navigate('/talent')
+    // Reset all filters and encode the status in the URL so TalentListPage
+    // reliably applies it even when the component is already mounted.
+    setFilters({ status: status ? [status] : undefined })
+    navigate(status ? `/talent?status=${encodeURIComponent(status)}` : '/talent')
   }
 
   // Fall back to demoActivities if store has no real activities
