@@ -95,7 +95,7 @@ export default function AppLayout() {
       {/* Main content shifts with sidebar */}
       <motion.div
         animate={{ marginLeft: isMobile ? 0 : sidebarWidth }}
-        transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+        transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] as const }}
         style={{
           flex: 1,
           display: 'flex',

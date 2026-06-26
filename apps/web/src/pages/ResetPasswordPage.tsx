@@ -77,7 +77,7 @@ export default function ResetPasswordPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Inter", system-ui, sans-serif', padding: '0 20px' }}>
-      <motion.div initial={{ opacity: 0, y: 20, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.4, ease: [0.16,1,0.3,1] }}
+      <motion.div initial={{ opacity: 0, y: 20, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] as const }}
         style={{ width: '100%', maxWidth: 400 }}>
         {/* Gradient border card */}
         <div style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.16) 0%, rgba(124,58,237,0.16) 40%, rgba(255,255,255,0) 100%)', borderRadius: 20, padding: 1, boxShadow: 'rgba(124,58,237,0.2) 0 0 40px 0' }}>

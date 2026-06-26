@@ -96,7 +96,7 @@ export default function Sidebar({ collapsed, onToggle, isMobile = false, mobileO
           ? { x: mobileOpen ? 0 : -240, width: 240 }
           : { x: 0, width: collapsed ? 64 : 240 }
       }
-      transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+      transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] as const }}
       style={{
         position: 'fixed',
         left: 0,

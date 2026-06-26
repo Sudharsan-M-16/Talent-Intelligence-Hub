@@ -318,7 +318,7 @@ export default function LoginPage() {
       <canvas ref={canvasRef} style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', zIndex: 0, display: 'block' }} />
       <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 80% 60% at 50% 100%, rgba(124,58,237,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
-      <motion.div initial={{ opacity: 0, y: 28, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+      <motion.div initial={{ opacity: 0, y: 28, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] as const }}
         style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 860, margin: '0 auto', padding: '0 20px' }}>
 
         {/* Gradient border shell */}
@@ -339,7 +339,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18, duration: 0.5, ease: [0.16,1,0.3,1] }} style={{ marginTop: 48 }}>
+            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18, duration: 0.5, ease: [0.16, 1, 0.3, 1] as const }} style={{ marginTop: 48 }}>
               <h1 style={{ fontSize: 36, fontWeight: 600, lineHeight: '40px', letterSpacing: '-0.03em', color: '#fff', margin: 0 }}>
                 Intelligence for your{' '}
                 <span style={{ color: C.accent }}>talent pipeline.</span>

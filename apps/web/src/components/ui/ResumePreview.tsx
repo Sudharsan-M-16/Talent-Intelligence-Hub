@@ -121,7 +121,7 @@ export default function ResumePreview({ resumeUrl, resumeFile, onClose }: Resume
       initial={{ x: 480 }}
       animate={{ x: 0 }}
       exit={{ x: 480 }}
-      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] as const }}
       style={{
         position: 'fixed',
         right: 0,
