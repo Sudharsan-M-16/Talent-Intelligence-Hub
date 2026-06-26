@@ -45,17 +45,15 @@ const FS = `
   void main() {
     vec2 uv = gl_FragCoord.xy / u_res;
 
-    // Mouse tilt — subtle lateral lean
+    // Mouse tilt
     vec2 m = (u_mouse / u_res - 0.5) * 0.04;
     uv += m;
 
-    vec3 bg = vec3(0.024, 0.024, 0.059);
+    vec3 bg = vec3(0.022, 0.022, 0.056);
 
-    // Continuous forward flight — grid scrolls toward viewer
-    float scroll = u_t * 0.22;
-
-    // Slow autonomous lateral drift so it moves without any mouse input
-    float drift = sin(u_t * 0.09) * 0.06;
+    // Forward flight — slightly faster for drama
+    float scroll = u_t * 0.30;
+    float drift  = sin(u_t * 0.09) * 0.06;
 
     float depth = clamp(uv.y, 0.001, 1.0);
     float pz    = 1.0 / (1.0 - depth * 0.82);
@@ -67,51 +65,84 @@ const FS = `
 
     float sz   = 1.0;
     vec2  cell = abs(fract(pg / sz + 0.5) - 0.5) * sz;
-    float lx   = smoothstep(0.048, 0.008, cell.x);
-    float ly   = smoothstep(0.048, 0.008, cell.y);
+    float lx   = smoothstep(0.05, 0.006, cell.x);
+    float ly   = smoothstep(0.05, 0.006, cell.y);
     float grid = max(lx, ly);
+
+    // Grid intersection nodes — bright dots where lines cross
+    float node = lx * ly * 28.0;
 
     float dFade = depth * depth * depth;
     float eFade = smoothstep(0.0, 0.10, uv.x) * smoothstep(1.0, 0.90, uv.x);
     float fade  = dFade * eFade;
 
-    // Horizon glow — pulses gently at the vanishing point
-    float horizonY   = 0.72;
-    float horizonDist = abs(uv.y - horizonY);
-    float horizonGlow = smoothstep(0.22, 0.0, horizonDist)
-                      * (0.7 + 0.3 * sin(u_t * 0.6))
-                      * 0.055;
+    // Color cycle: violet → electric-blue → indigo
+    float cc     = u_t * 0.12;
+    vec3 violet  = vec3(0.49, 0.23, 0.93);
+    vec3 elec    = vec3(0.30, 0.16, 1.00);
+    vec3 indig   = vec3(0.38, 0.18, 0.82);
+    vec3 lineCol = mix(violet, elec, 0.5 + 0.5 * sin(cc));
+    vec3 nodeCol = mix(elec, vec3(0.7, 0.55, 1.0), 0.5 + 0.5 * sin(cc + 1.2));
 
-    // Speed lines: bright streaks near the edges that pulse with scroll
-    float edgeDist = min(uv.x, 1.0 - uv.x);
+    // Horizon glow
+    float horizonY    = 0.72;
+    float horizonDist = abs(uv.y - horizonY);
+    float horizonGlow = smoothstep(0.26, 0.0, horizonDist)
+                      * (0.7 + 0.3 * sin(u_t * 0.6))
+                      * 0.10;
+
+    // Radial pulse wave that sweeps out from the horizon periodically
+    float pulseT   = fract(u_t * 0.35);
+    float pulseY   = horizonY + pulseT * (1.0 - horizonY);
+    float pulseDst = abs(uv.y - pulseY);
+    float pulse    = smoothstep(0.025, 0.0, pulseDst)
+                   * (1.0 - pulseT) * (1.0 - pulseT)
+                   * 0.18;
+
+    // Speed lines at edges
+    float edgeDist  = min(uv.x, 1.0 - uv.x);
     float speedLine = smoothstep(0.18, 0.0, edgeDist)
                     * smoothstep(0.3, 0.7, uv.y)
                     * (0.5 + 0.5 * sin(u_t * 1.4 + uv.y * 8.0))
-                    * 0.06;
+                    * 0.07;
 
-    // Starfield — sparse twinkling dots in the upper region
+    // Starfield — denser, more varied size
     float stars = 0.0;
-    vec2 starUV   = uv * vec2(90.0, 45.0);
+    vec2 starUV   = uv * vec2(110.0, 55.0);
     vec2 starCell = floor(starUV);
     float h       = hash(starCell);
-    if (h > 0.965) {
-      vec2  sp      = fract(starUV) - 0.5;
-      float twinkle = 0.4 + 0.6 * sin(u_t * (1.5 + h * 4.0) + h * 80.0);
-      float upperBias = smoothstep(0.3, 0.9, uv.y);
-      stars = smoothstep(0.12, 0.0, length(sp)) * twinkle * upperBias * 0.7;
+    if (h > 0.958) {
+      vec2  sp       = fract(starUV) - 0.5;
+      float twinkle  = 0.4 + 0.6 * sin(u_t * (1.5 + h * 5.0) + h * 80.0);
+      float upperBias = smoothstep(0.25, 0.85, uv.y);
+      float radius    = 0.06 + h * 0.06;
+      stars = smoothstep(radius, 0.0, length(sp)) * twinkle * upperBias * 0.85;
     }
 
-    vec3 violet = vec3(0.486, 0.227, 0.929);
-    vec3 indigo  = vec3(0.38,  0.18,  0.82);
+    // Shooting star — fires every ~8 s, diagonal trail
+    float shootCycle = fract(u_t * 0.125 + 0.6);
+    vec2  shootOri   = vec2(0.08 + hash(vec2(floor(u_t * 0.125), 0.0)) * 0.4, 0.92);
+    vec2  shootDir   = normalize(vec2(1.8, -1.0));
+    vec2  shootTip   = shootOri + shootDir * shootCycle * 1.1;
+    float sDist      = length(uv - shootTip);
+    float sTrailLen  = 0.07;
+    vec2  shootTail  = shootOri + shootDir * max(0.0, shootCycle - sTrailLen) * 1.1;
+    float tDist      = length(uv - shootTail);
+    float shooting   = smoothstep(0.003, 0.0, sDist) * (1.0 - smoothstep(0.0, 0.6, shootCycle));
+    shooting        += smoothstep(0.018, 0.0, tDist) * (1.0 - smoothstep(0.0, 0.5, shootCycle)) * 0.4;
 
-    float line = grid * fade * 0.42;
-    float glow = pow(depth, 4.0) * eFade * 0.018;
+    float line = grid  * fade * 0.55;
+    float glow = pow(depth, 4.0) * eFade * 0.024;
+    float nd   = clamp(node * fade, 0.0, 1.0);
 
     vec3 col = bg
-             + violet * (line + glow)
-             + violet * horizonGlow
-             + indigo * speedLine
-             + vec3(0.7, 0.75, 1.0) * stars;
+             + lineCol * (line + glow)
+             + lineCol * horizonGlow
+             + lineCol * pulse
+             + nodeCol * nd * 0.9
+             + indig   * speedLine
+             + vec3(0.72, 0.76, 1.0) * stars
+             + vec3(1.0,  0.92, 0.85) * shooting;
 
     gl_FragColor = vec4(col, 1.0);
   }
@@ -360,8 +391,25 @@ export default function LoginPage() {
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div style={{ position: 'relative', minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Inter", system-ui, sans-serif', overflow: 'hidden' }}>
+      {/* Keyframes for floating orbs */}
+      <style>{`
+        @keyframes orb1 { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(60px,-40px) scale(1.08)} 66%{transform:translate(-30px,50px) scale(0.94)} }
+        @keyframes orb2 { 0%,100%{transform:translate(0,0) scale(1)} 40%{transform:translate(-50px,30px) scale(1.12)} 75%{transform:translate(40px,-60px) scale(0.92)} }
+        @keyframes orb3 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(30px,40px) scale(1.05)} }
+        @keyframes orb4 { 0%,100%{transform:translate(0,0) scale(1)} 60%{transform:translate(-40px,-30px) scale(1.10)} }
+      `}</style>
+
       <canvas ref={canvasRef} style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', zIndex: 0, display: 'block' }} />
-      <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 80% 60% at 50% 100%, rgba(124,58,237,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+      {/* Floating nebula orbs — layered behind card, above canvas */}
+      <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', width: 700, height: 700, borderRadius: '50%', top: '-15%', left: '-18%', background: 'radial-gradient(circle, rgba(124,58,237,0.13) 0%, transparent 65%)', animation: 'orb1 22s ease-in-out infinite' }} />
+        <div style={{ position: 'absolute', width: 560, height: 560, borderRadius: '50%', bottom: '-10%', right: '-12%', background: 'radial-gradient(circle, rgba(99,102,241,0.11) 0%, transparent 65%)', animation: 'orb2 28s ease-in-out infinite' }} />
+        <div style={{ position: 'absolute', width: 420, height: 420, borderRadius: '50%', top: '35%', left: '28%', background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 65%)', animation: 'orb3 35s ease-in-out infinite' }} />
+        <div style={{ position: 'absolute', width: 320, height: 320, borderRadius: '50%', top: '10%', right: '20%', background: 'radial-gradient(circle, rgba(79,70,229,0.09) 0%, transparent 65%)', animation: 'orb4 19s ease-in-out infinite' }} />
+      </div>
+
+      <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 80% 60% at 50% 100%, rgba(124,58,237,0.10) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
       <motion.div initial={{ opacity: 0, y: 28, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] as const }}
         style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 860, margin: '0 auto', padding: '0 20px' }}>

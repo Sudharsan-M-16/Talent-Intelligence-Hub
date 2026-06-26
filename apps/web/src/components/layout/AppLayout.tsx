@@ -27,7 +27,7 @@ export default function AppLayout() {
     if (!isAuthenticated || !orgId || !isSupabaseReady) return
     if (dataLoadedForRef.current === orgId) return
     dataLoadedForRef.current = orgId
-    loadFromSupabase(orgId, user.id)
+    loadFromSupabase(orgId, user.id, user.email)
   }, [isAuthenticated, user?.organization_id, user?.id, loadFromSupabase])
 
   useEffect(() => {

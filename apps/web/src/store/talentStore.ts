@@ -25,6 +25,9 @@ import {
   deleteSavedSearchInDb,
 } from '../lib/talentService'
 
+// The one account whose org gets seeded with demo profiles on first login
+const SEED_EMAIL = 'sudhum16@gmail.com'
+
 interface TalentStore {
   profiles: TalentProfile[]
   tags: Tag[]
@@ -42,7 +45,7 @@ interface TalentStore {
 
   // Actions
   setOrgContext: (orgId: string, userId: string) => void
-  loadFromSupabase: (orgId: string, userId: string) => Promise<void>
+  loadFromSupabase: (orgId: string, userId: string, userEmail?: string) => Promise<void>
 
   setProfiles: (profiles: TalentProfile[]) => void
   addProfile: (profile: TalentProfile) => void
@@ -73,8 +76,8 @@ interface TalentStore {
 export const useTalentStore = create<TalentStore>()(
   persist(
     (set, get) => ({
-      profiles:      demoProfiles,
-      tags:          demoTags,
+      profiles:      [],
+      tags:          [],
       filters:       {},
       selectedIds:   [],
       compareIds:    [],
@@ -89,7 +92,7 @@ export const useTalentStore = create<TalentStore>()(
 
       setOrgContext: (orgId, userId) => set({ orgId, userId }),
 
-      loadFromSupabase: async (orgId, userId) => {
+      loadFromSupabase: async (orgId, userId, userEmail?) => {
         if (!isSupabaseReady) return
         set({ isLoadingData: true, orgId, userId })
         try {
@@ -99,7 +102,61 @@ export const useTalentStore = create<TalentStore>()(
             fetchActivities(orgId),
             fetchSavedSearches(orgId, userId),
           ])
-          set({ profiles, tags, activities, savedSearches })
+
+          if (profiles.length === 0) {
+            const localProfiles = get().profiles
+
+            if (localProfiles.length > 0) {
+              // Supabase is empty but the browser cache has profiles — migrate them up.
+              // This handles the case where the user had demo data in localStorage before
+              // Supabase was connected. Runs silently; failures are non-fatal.
+              await Promise.all(localProfiles.map((p) => {
+                const { id: _id, ...rest } = p
+                return createProfileInDb(
+                  { ...rest, id: crypto.randomUUID(), organization_id: orgId },
+                  orgId
+                ).catch(() => null)
+              }))
+              const [migratedProfiles, migratedTags, migratedActivities] = await Promise.all([
+                fetchProfiles(orgId),
+                fetchTags(orgId),
+                fetchActivities(orgId),
+              ])
+              set({ profiles: migratedProfiles.length > 0 ? migratedProfiles : localProfiles, tags: migratedTags.length > 0 ? migratedTags : tags, activities: migratedActivities, savedSearches })
+            } else if (userEmail === SEED_EMAIL) {
+              // Primary demo account — seed Supabase with the built-in demo profiles
+              // so this account always has data regardless of localStorage state.
+              await Promise.all(demoProfiles.map((p) => {
+                const { id: _id, ...rest } = p
+                return createProfileInDb(
+                  { ...rest, id: crypto.randomUUID(), organization_id: orgId },
+                  orgId
+                ).catch(() => null)
+              }))
+              await Promise.all(demoTags.map((t) =>
+                createTagInDb(
+                  { name: t.name, color: t.color, organization_id: orgId },
+                  orgId
+                ).catch(() => null)
+              ))
+              const [seededProfiles, seededTags, seededActivities] = await Promise.all([
+                fetchProfiles(orgId),
+                fetchTags(orgId),
+                fetchActivities(orgId),
+              ])
+              set({
+                profiles: seededProfiles.length > 0 ? seededProfiles : demoProfiles,
+                tags: seededTags.length > 0 ? seededTags : demoTags,
+                activities: seededActivities,
+                savedSearches,
+              })
+            } else {
+              // New user — start with a clean blank slate.
+              set({ profiles: [], tags: [], activities: [], savedSearches })
+            }
+          } else {
+            set({ profiles, tags, activities, savedSearches })
+          }
 
           // Set up real-time subscriptions so changes in other tabs/devices refresh local state
           if (_realtimeChannel) {
@@ -511,7 +568,7 @@ export const useTalentStore = create<TalentStore>()(
       },
     }),
     {
-      name: 'tih-talent-store-v2',
+      name: 'tih-talent-store-v3',
       // orgId, userId, isLoadingData are NOT persisted (session-derived from auth)
       partialize: (s) => ({
         profiles:      s.profiles,
@@ -536,8 +593,8 @@ export const useTalentStore = create<TalentStore>()(
                   typeof (x as TalentProfile).id === 'string' &&
                   typeof (x as TalentProfile).full_name === 'string'
               )
-            : current.profiles,
-          tags: Array.isArray(p?.tags) && p.tags.length > 0 ? p.tags : current.tags,
+            : [],
+          tags: Array.isArray(p?.tags) && p.tags.length > 0 ? p.tags : [],
           viewMode: p?.viewMode ?? current.viewMode,
           savedSearches: Array.isArray(p?.savedSearches)
             ? p.savedSearches.filter(
