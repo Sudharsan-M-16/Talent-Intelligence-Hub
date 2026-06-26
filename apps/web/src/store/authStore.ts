@@ -80,24 +80,15 @@ export const useAuthStore = create<AuthStore>()((set) => ({
       return
     }
 
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        const user = await resolveUser(session.user)
-        set({ user, isAuthenticated: true, isLoading: false })
-      } else {
-        set({ isLoading: false })
-      }
-    } catch {
-      set({ isLoading: false })
-    }
-
-    // Subscribe to auth state changes (token refresh, multi-tab sign-out, OAuth callback)
+    // Subscribe FIRST. Supabase fires INITIAL_SESSION with the resolved session —
+    // including after refreshing an expired access_token using the stored refresh_token.
+    // This is the correct pattern for session persistence across browser closes:
+    // getSession() alone can return null for expired-but-refreshable tokens.
     if (authSubscription) authSubscription.unsubscribe()
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        // Set isLoading: true so ProtectedRoute shows PageLoader while resolveUser runs
-        // (prevents a brief redirect-to-login during the async org bootstrap)
+        // Keep isLoading: true while resolveUser runs (org bootstrap DB call).
+        // ProtectedRoute shows PageLoader instead of briefly redirecting to /login.
         set({ isLoading: true })
         const user = await resolveUser(session.user)
         set({ user, isAuthenticated: true, isLoading: false })

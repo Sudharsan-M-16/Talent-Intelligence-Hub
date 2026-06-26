@@ -12,6 +12,7 @@ import {
 } from 'recharts'
 import { useTalentStore } from '../store/talentStore'
 import { useAuthStore } from '../store/authStore'
+import type { TalentStatus } from '../types/database'
 import { demoActivities } from '../lib/demoData'
 import { formatRelativeTime } from '../lib/utils'
 import TalentAvatar from '../components/ui/TalentAvatar'
@@ -108,8 +109,14 @@ const PieTooltip = ({
 export default function DashboardPage() {
   const { profiles } = useTalentStore()
   const storeActivities = useTalentStore((s) => s.activities)
+  const setFilters = useTalentStore((s) => s.setFilters)
   const { user } = useAuthStore()
   const navigate = useNavigate()
+
+  const goFiltered = (status?: TalentStatus) => {
+    setFilters({ status: status ? [status] : undefined, query: undefined })
+    navigate('/talent')
+  }
 
   // Fall back to demoActivities if store has no real activities
   const activities = (storeActivities ?? []).length > 0 ? (storeActivities ?? []) : demoActivities
@@ -135,13 +142,16 @@ export default function DashboardPage() {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const dateStr = now.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })
 
-  const statCards = [
-    { label: 'Total Talent',  value: stats.total,       icon: Users,       color: '#7880d8', accent: 'rgba(94,106,210,0.12)', path: '/talent' },
-    { label: 'New Profiles',  value: stats.new,          icon: UserPlus,    color: '#5fa0f0', accent: 'rgba(95,160,240,0.10)', path: '/talent' },
-    { label: 'Under Review',  value: stats.underReview,  icon: Clock,       color: '#d4902c', accent: 'rgba(212,144,44,0.10)', path: '/kanban' },
-    { label: 'Shortlisted',   value: stats.shortlisted,  icon: Star,        color: '#9c7ce8', accent: 'rgba(156,124,232,0.10)', path: '/shortlisted' },
-    { label: 'Approved',      value: stats.approved,     icon: CheckCircle, color: '#3ab87a', accent: 'rgba(58,184,122,0.10)', path: '/talent' },
-    { label: 'Engaged',       value: stats.engaged,      icon: Zap,         color: '#22a4c0', accent: 'rgba(34,164,192,0.10)', path: '/kanban' },
+  const statCards: Array<{
+    label: string; value: number; icon: React.ElementType
+    color: string; accent: string; onClick: () => void
+  }> = [
+    { label: 'Total Talent',  value: stats.total,       icon: Users,       color: '#7880d8', accent: 'rgba(94,106,210,0.12)', onClick: () => goFiltered() },
+    { label: 'New Profiles',  value: stats.new,          icon: UserPlus,    color: '#5fa0f0', accent: 'rgba(95,160,240,0.10)', onClick: () => goFiltered('New') },
+    { label: 'Under Review',  value: stats.underReview,  icon: Clock,       color: '#d4902c', accent: 'rgba(212,144,44,0.10)', onClick: () => goFiltered('Under Review') },
+    { label: 'Shortlisted',   value: stats.shortlisted,  icon: Star,        color: '#9c7ce8', accent: 'rgba(156,124,232,0.10)', onClick: () => navigate('/shortlisted') },
+    { label: 'Approved',      value: stats.approved,     icon: CheckCircle, color: '#3ab87a', accent: 'rgba(58,184,122,0.10)', onClick: () => goFiltered('Approved') },
+    { label: 'Engaged',       value: stats.engaged,      icon: Zap,         color: '#22a4c0', accent: 'rgba(34,164,192,0.10)', onClick: () => goFiltered('Engaged') },
   ]
 
   const sourceCounts = useMemo(() => active.reduce<Record<string, number>>((acc, p) => {
@@ -221,7 +231,7 @@ export default function DashboardPage() {
             variants={fadeUp}
             initial="hidden"
             animate="visible"
-            onClick={() => navigate(card.path)}
+            onClick={card.onClick}
             style={{
               background: 'var(--bg-card)',
               border: '1px solid var(--border)',
