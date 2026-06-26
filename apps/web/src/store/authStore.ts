@@ -143,21 +143,24 @@ export const useAuthStore = create<AuthStore>()((set) => ({
   },
 
   login: async (email, password) => {
-    set({ isLoading: true })
+    // Do NOT touch isLoading here — setting it true would cause AuthRoute to
+    // unmount LoginPage (replacing it with PageLoader), which resets all local
+    // component state (including the error message) before it can be displayed.
+    // LoginPage manages its own button-level loading spinner independently.
 
     if (isSupabaseReady && supabase) {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) { set({ isLoading: false }); throw new Error(error.message) }
+      if (error) throw new Error(error.message)
       if (data.user) {
         const user = await resolveUser(data.user)
-        set({ user, isAuthenticated: true, isLoading: false })
+        set({ user, isAuthenticated: true })
         return
       }
     }
 
     // Demo fallback: any email/password works when Supabase is not configured
     await new Promise((r) => setTimeout(r, 500))
-    set({ isLoading: false, isAuthenticated: true, user: DEMO_ADMIN_USER })
+    set({ isAuthenticated: true, user: DEMO_ADMIN_USER })
   },
 
   signup: async (email, password, fullName) => {
