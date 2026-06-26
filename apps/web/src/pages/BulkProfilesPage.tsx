@@ -49,6 +49,7 @@ export default function BulkProfilesPage() {
   const [sessionImportIds, setSessionImportIds] = useState<Set<string>>(new Set())
   const [showOnlyImports, setShowOnlyImports] = useState(false)
   const [stagedSelected, setStagedSelected] = useState<Set<string>>(new Set())
+  const [filteredSelected, setFilteredSelected] = useState<Set<string>>(new Set())
 
   const filteredProfiles = useMemo(() => {
     let result = filterProfilesForBulkPage(profiles, filters)
@@ -60,6 +61,7 @@ export default function BulkProfilesPage() {
 
   const updateFilter = (key: keyof typeof filters, value: string) => {
     setFilters((current) => ({ ...current, [key]: value }))
+    setFilteredSelected(new Set())
   }
 
   const handleFile = async (file: File) => {
@@ -321,12 +323,37 @@ export default function BulkProfilesPage() {
                 </span>
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <button className="btn-secondary" onClick={() => void exportProfiles(filteredProfiles, 'csv', 'tih-filtered-profiles')}>
-                  <Download size={14} /> Filtered CSV
-                </button>
-                <button className="btn-secondary" onClick={() => void exportProfiles(filteredProfiles, 'xlsx', 'tih-filtered-profiles')}>
-                  <Download size={14} /> Filtered Excel
-                </button>
+                {filteredSelected.size > 0 ? (
+                  <>
+                    <span style={{ fontSize: 12, color: 'var(--accent-bright)', fontWeight: 600, alignSelf: 'center', padding: '0 4px' }}>
+                      {filteredSelected.size} selected
+                    </span>
+                    <button className="btn-primary" style={{ fontSize: 12 }} onClick={() => {
+                      const sel = filteredProfiles.filter(p => filteredSelected.has(p.id))
+                      void exportProfiles(sel, 'csv', `tih-selected-${sel.length}`)
+                    }}>
+                      <Download size={13} /> CSV
+                    </button>
+                    <button className="btn-secondary" style={{ fontSize: 12 }} onClick={() => {
+                      const sel = filteredProfiles.filter(p => filteredSelected.has(p.id))
+                      void exportProfiles(sel, 'xlsx', `tih-selected-${sel.length}`)
+                    }}>
+                      <Download size={13} /> Excel
+                    </button>
+                    <button className="btn-ghost" style={{ fontSize: 12 }} onClick={() => setFilteredSelected(new Set())}>
+                      <X size={12} /> Clear
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button className="btn-secondary" onClick={() => void exportProfiles(filteredProfiles, 'csv', 'tih-filtered-profiles')}>
+                      <Download size={14} /> Filtered CSV
+                    </button>
+                    <button className="btn-secondary" onClick={() => void exportProfiles(filteredProfiles, 'xlsx', 'tih-filtered-profiles')}>
+                      <Download size={14} /> Filtered Excel
+                    </button>
+                  </>
+                )}
                 {sessionImportIds.size > 0 && (
                   <button 
                     className={showOnlyImports ? "btn-primary" : "btn-secondary"} 
@@ -488,6 +515,17 @@ export default function BulkProfilesPage() {
               <table className="data-table" style={{ width: '100%' }}>
                 <thead>
                   <tr>
+                    <th style={{ width: 40 }}>
+                      <input
+                        type="checkbox"
+                        checked={filteredSelected.size === filteredProfiles.length && filteredProfiles.length > 0}
+                        onChange={(e) => {
+                          if (e.target.checked) setFilteredSelected(new Set(filteredProfiles.slice(0, 100).map(p => p.id)))
+                          else setFilteredSelected(new Set())
+                        }}
+                        style={{ cursor: 'pointer' }}
+                      />
+                    </th>
                     <th>Name / Details</th>
                     <th>Skills</th>
                     <th>Experience</th>
@@ -498,7 +536,21 @@ export default function BulkProfilesPage() {
                 </thead>
                 <tbody>
                   {filteredProfiles.slice(0, 100).map((profile) => (
-                    <tr key={profile.id}>
+                    <tr key={profile.id} style={{ background: filteredSelected.has(profile.id) ? 'var(--accent-dim)' : undefined }}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={filteredSelected.has(profile.id)}
+                          onChange={(e) => {
+                            setFilteredSelected(prev => {
+                              const next = new Set(prev)
+                              if (e.target.checked) next.add(profile.id); else next.delete(profile.id)
+                              return next
+                            })
+                          }}
+                          style={{ cursor: 'pointer' }}
+                        />
+                      </td>
                       <td>
                         <div style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{profile.full_name}</div>
                         <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>{profile.designation || profile.organization || profile.talent_type}</div>
@@ -515,7 +567,7 @@ export default function BulkProfilesPage() {
                   ))}
                   {filteredProfiles.length === 0 && (
                     <tr>
-                      <td colSpan={7} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
+                      <td colSpan={8} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
                         No profiles match the current filters.
                       </td>
                     </tr>

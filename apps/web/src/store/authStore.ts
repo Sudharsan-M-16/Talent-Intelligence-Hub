@@ -80,15 +80,14 @@ export const useAuthStore = create<AuthStore>()((set) => ({
       return
     }
 
-    // Subscribe FIRST. Supabase fires INITIAL_SESSION with the resolved session —
-    // including after refreshing an expired access_token using the stored refresh_token.
-    // This is the correct pattern for session persistence across browser closes:
-    // getSession() alone can return null for expired-but-refreshable tokens.
+    // Subscribe for future events: TOKEN_REFRESHED, SIGNED_OUT, OAuth callbacks.
+    // onAuthStateChange is NOT used for the initial session check — we use
+    // getSession() below for that, which correctly awaits any in-flight token refresh.
     if (authSubscription) authSubscription.unsubscribe()
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Skip INITIAL_SESSION — handled by getSession() below to avoid double-resolve.
+      if (event === 'INITIAL_SESSION') return
       if (session?.user) {
-        // Keep isLoading: true while resolveUser runs (org bootstrap DB call).
-        // ProtectedRoute shows PageLoader instead of briefly redirecting to /login.
         set({ isLoading: true })
         const user = await resolveUser(session.user)
         set({ user, isAuthenticated: true, isLoading: false })
@@ -97,6 +96,20 @@ export const useAuthStore = create<AuthStore>()((set) => ({
       }
     })
     authSubscription = subscription
+
+    // getSession() awaits any pending token refresh before returning, so a returning
+    // user with an expired access_token but valid refresh_token will be resolved here.
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        const user = await resolveUser(session.user)
+        set({ user, isAuthenticated: true, isLoading: false })
+      } else {
+        set({ isLoading: false })
+      }
+    } catch {
+      set({ isLoading: false })
+    }
   },
 
   login: async (email, password) => {
