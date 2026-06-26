@@ -143,19 +143,19 @@ export default function TalentListPage() {
   // Debounced search
   const [searchInput, setSearchInput] = useState(filters.query || '')
 
-  // Apply URL params on mount (e.g. ?status=New from dashboard card click).
-  // Also clears any leftover search text when the filter is driven from outside.
+  // Apply ?status= param from URL (set by dashboard card clicks).
+  // Runs on mount AND whenever the URL changes so it works even if this
+  // component is already mounted when the user navigates from the dashboard.
   useEffect(() => {
     const statusParam = searchParams.get('status')
-    if (statusParam) {
-      const statuses = statusParam.split(',') as TalentStatus[]
-      useTalentStore.getState().setFilters({ status: statuses })
-      setSearchInput('')
-      // Strip the param from the URL so Back button works naturally
-      setSearchParams({}, { replace: true })
-    }
+    if (!statusParam) return
+    const statuses = statusParam.split(',') as TalentStatus[]
+    useTalentStore.getState().setFilters({ status: statuses })
+    setSearchInput('')
+    setSearchParams({}, { replace: true })   // strip param; Back button still works
+  // searchParams.toString() gives a stable primitive dep that changes with the URL
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [searchParams.toString()])
 
   // Keep search input in sync when filters.query is cleared externally
   useEffect(() => {

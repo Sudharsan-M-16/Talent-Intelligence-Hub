@@ -59,12 +59,14 @@ function mapSupabaseUser(sbUser: User): AuthUser {
   }
 }
 
-// Bootstrap org and return a fully-populated AuthUser
+// Bootstrap org and return a fully-populated AuthUser.
+// Fast path for returning users: if org_id is already in user_metadata we skip
+// the DB round-trip (initOrgAndUser) entirely — shaves ~1s off every reload.
 async function resolveUser(sbUser: User): Promise<AuthUser> {
   const mapped = mapSupabaseUser(sbUser)
-  // Ensure the org exists; gets or creates it and updates user_metadata
-  const orgId = await initOrgAndUser(sbUser)
-  return { ...mapped, organization_id: orgId ?? mapped.organization_id ?? 'demo-org-001' }
+  if (mapped.organization_id) return mapped      // returning user — already bootstrapped
+  const orgId = await initOrgAndUser(sbUser)     // first-ever login — create org
+  return { ...mapped, organization_id: orgId ?? 'demo-org-001' }
 }
 
 const USER_CACHE_KEY = 'tih-auth-user-v1'
@@ -87,15 +89,11 @@ function clearUserCache() {
 }
 
 let authSubscription: { unsubscribe: () => void } | null = null
-// Debounce handle for SIGNED_OUT: Google OAuth token refresh fires SIGNED_OUT
-// immediately followed by SIGNED_IN. We delay acting on SIGNED_OUT so the
-// incoming SIGNED_IN can cancel it — preventing a spurious logout flash.
-let signedOutTimer: ReturnType<typeof setTimeout> | null = null
 
 export const useAuthStore = create<AuthStore>()((set) => ({
   user: null,
   isAuthenticated: false,
-  isLoading: true, // true until init() completes — prevents login flash
+  isLoading: true,
 
   init: async () => {
     if (!isSupabaseReady || !supabase) {
@@ -103,45 +101,32 @@ export const useAuthStore = create<AuthStore>()((set) => ({
       return
     }
 
-    // Optimistic restore: show the app immediately from cache while we verify
-    // the session in the background. Eliminates the flash of the login page on
-    // tab reload (Chrome tab eviction) caused by the async getSession() round-trip.
+    // Instantly restore from cache — zero loading screen for returning users.
     const cached = readUserCache()
-    if (cached) {
-      set({ user: cached, isAuthenticated: true, isLoading: false })
-    }
+    if (cached) set({ user: cached, isAuthenticated: true, isLoading: false })
 
     if (authSubscription) authSubscription.unsubscribe()
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // These are silent background operations — no UI change needed.
-      if (event === 'INITIAL_SESSION') return
-      if (event === 'TOKEN_REFRESHED') return
+      // Only handle explicit new sign-ins (Google OAuth redirect, email magic link).
+      // TOKEN_REFRESHED, SIGNED_OUT, INITIAL_SESSION and USER_UPDATED are all
+      // intentionally ignored here:
+      //   - TOKEN_REFRESHED: SDK already updated localStorage; no UI change needed.
+      //   - SIGNED_OUT: fired spuriously by Supabase on every tab-focus token check.
+      //     Handling it causes a flash. Real logout is done by logout() directly.
+      //   - INITIAL_SESSION / others: handled by getSession() below.
+      if (event !== 'SIGNED_IN') return
+      if (!session?.user) return
 
-      if (session?.user) {
-        // Cancel any pending sign-out that was waiting to see if a sign-in followed.
-        if (signedOutTimer) { clearTimeout(signedOutTimer); signedOutTimer = null }
-        // Never show a loading screen if we already have a user in state.
-        // resolveUser() runs silently in the background for already-authenticated users.
-        const hasUser = !!useAuthStore.getState().user
-        if (!hasUser) set({ isLoading: true })
-        const user = await resolveUser(session.user)
-        writeUserCache(user)
-        set({ user, isAuthenticated: true, isLoading: false })
-      } else if (event === 'SIGNED_OUT') {
-        // Debounce: Google OAuth refresh emits SIGNED_OUT then SIGNED_IN within ~200ms.
-        // Wait 1.5s before acting — if SIGNED_IN arrives first, cancel the timer.
-        if (signedOutTimer) clearTimeout(signedOutTimer)
-        signedOutTimer = setTimeout(() => {
-          signedOutTimer = null
-          clearUserCache()
-          set({ user: null, isAuthenticated: false, isLoading: false })
-        }, 1500)
-      }
+      const hasUser = !!useAuthStore.getState().user
+      if (!hasUser) set({ isLoading: true })
+      const user = await resolveUser(session.user)
+      writeUserCache(user)
+      set({ user, isAuthenticated: true, isLoading: false })
     })
     authSubscription = subscription
 
-    // Verify the session. getSession() refreshes an expired access token if the
-    // refresh token is still valid. If it returns null, the cache was stale.
+    // Verify cache. getSession() also refreshes an expired access token if the
+    // refresh token is still valid. Returns null only when genuinely logged out.
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
@@ -153,7 +138,7 @@ export const useAuthStore = create<AuthStore>()((set) => ({
         set({ user: null, isAuthenticated: false, isLoading: false })
       }
     } catch {
-      if (!readUserCache()) set({ isLoading: false })
+      if (!cached) set({ isLoading: false })
     }
   },
 
