@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { motion } from 'framer-motion'
 import Sidebar from './Sidebar'
 import Topbar from './Topbar'
 import { useThemeStore } from '../../store/themeStore'
+import { useAuthStore } from '../../store/authStore'
+import { useTalentStore } from '../../store/talentStore'
+import { isSupabaseReady } from '../../lib/supabase'
 
 export default function AppLayout() {
   const [collapsed, setCollapsed] = useState(false)
@@ -12,6 +15,20 @@ export default function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const sidebarWidth = collapsed ? 64 : 240
   const theme = useThemeStore((s) => s.theme)
+  const user = useAuthStore((s) => s.user)
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const loadFromSupabase = useTalentStore((s) => s.loadFromSupabase)
+  const dataLoadedForRef = useRef<string | null>(null)
+
+  // Load all data from Supabase once per authenticated session.
+  // Re-runs when the user's org changes (e.g. after first-time org bootstrap).
+  useEffect(() => {
+    const orgId = user?.organization_id
+    if (!isAuthenticated || !orgId || !isSupabaseReady) return
+    if (dataLoadedForRef.current === orgId) return
+    dataLoadedForRef.current = orgId
+    loadFromSupabase(orgId, user.id)
+  }, [isAuthenticated, user?.organization_id, user?.id, loadFromSupabase])
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)

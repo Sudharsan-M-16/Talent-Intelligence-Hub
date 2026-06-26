@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, AlertTriangle, ChevronRight, Save } from 'lucide-react'
+import { ArrowLeft, AlertTriangle, ChevronRight, Save, CheckCircle, Loader, ExternalLink } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useTalentStore } from '../store/talentStore'
 import type { TalentProfile, TalentType, TalentStatus, TalentSource } from '../types/database'
 import { DEMO_ORG_ID } from '../lib/demoData'
 import { normalizeUrl } from '../lib/utils'
+import { uploadFile, isSupabaseReady } from '../lib/supabase'
 import ResumeUpload from '../components/ui/ResumeUpload'
 
 const TALENT_TYPES: TalentType[] = ['Trainer', 'Consultant', 'Employee', 'Speaker', 'Mentor', 'Freelancer', 'Contractor', 'Other']
@@ -104,6 +105,13 @@ export default function TalentFormPage() {
   const [isDirty, setIsDirty] = useState(false)
   // dragOver no longer needed — handled in ResumeUpload component
 
+  // Resume Supabase upload state
+  const [uploadingResume, setUploadingResume] = useState(false)
+  const [uploadedResumeFile, setUploadedResumeFile] = useState<string>('')
+
+  // Stable profile ID used for the storage path — either the existing ID or a pre-generated one for new profiles
+  const profileIdRef = useRef<string>(id ?? `p${Date.now()}`)
+
   const [form, setForm] = useState<Partial<TalentProfile>>({
     full_name: '',
     email: '',
@@ -164,6 +172,26 @@ export default function TalentFormPage() {
     else setDuplicateWarning(null)
   }
 
+  const handleResumeFileSelected = async (file: File) => {
+    if (!isSupabaseReady) return // Demo mode — skip upload, parsing still happens
+    setUploadingResume(true)
+    setUploadedResumeFile(file.name)
+    try {
+      const profileId = profileIdRef.current
+      const url = await uploadFile('resumes', `${profileId}/${file.name}`, file)
+      if (url) {
+        setField('resume_url', url)
+        toast.success(`Resume uploaded: ${file.name}`)
+      } else {
+        toast.error('Resume upload failed — check Supabase storage settings')
+      }
+    } catch {
+      toast.error('Resume upload failed')
+    } finally {
+      setUploadingResume(false)
+    }
+  }
+
   const validate = () => {
     const errs: Record<string, string> = {}
     if (!form.full_name?.trim()) errs.full_name = 'Full name is required'
@@ -208,7 +236,7 @@ export default function TalentFormPage() {
       navigate(`/talent/${id}`)
     } else {
       const newProfile: TalentProfile = {
-        id: `p${Date.now()}`,
+        id: profileIdRef.current,
         organization_id: DEMO_ORG_ID,
         full_name: normalizedForm.full_name!,
         email: normalizedForm.email,
@@ -231,6 +259,7 @@ export default function TalentFormPage() {
         portfolio_url: normalizedForm.portfolio_url,
         website: normalizedForm.website,
         notes: normalizedForm.notes,
+        resume_url: normalizedForm.resume_url,
         overall_rating: undefined,
         is_shortlisted: false,
         is_favorite: false,
@@ -423,9 +452,62 @@ export default function TalentFormPage() {
                 ),
               }))
             }}
+            onFileSelected={handleResumeFileSelected}
           />
+
+          {/* Resume upload status indicator (Supabase mode) */}
+          {isSupabaseReady && (
+            <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+              {uploadingResume && (
+                <>
+                  <span style={{ animation: 'spin 0.8s linear infinite', display: 'flex' }}>
+                    <Loader size={13} color="var(--accent)" />
+                  </span>
+                  <span style={{ color: 'var(--text-secondary)' }}>
+                    Uploading {uploadedResumeFile}&hellip;
+                  </span>
+                </>
+              )}
+              {!uploadingResume && form.resume_url && uploadedResumeFile && (
+                <>
+                  <CheckCircle size={13} color="#4cc38a" />
+                  <span style={{ color: '#4cc38a', fontWeight: 500 }}>Uploaded</span>
+                  <span style={{ color: 'var(--text-muted)' }}>{uploadedResumeFile}</span>
+                  <a
+                    href={form.resume_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--accent)', textDecoration: 'none' }}
+                  >
+                    <ExternalLink size={11} /> View
+                  </a>
+                </>
+              )}
+              {!uploadingResume && !form.resume_url && uploadedResumeFile && (
+                <span style={{ color: 'var(--text-muted)' }}>Upload failed — form can still be saved</span>
+              )}
+            </div>
+          )}
+
+          {/* Existing resume link (edit mode, before a new file is picked) */}
+          {!uploadingResume && !uploadedResumeFile && form.resume_url && (
+            <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+              <CheckCircle size={13} color="#4cc38a" />
+              <span style={{ color: 'var(--text-secondary)' }}>Resume on file:</span>
+              <a
+                href={form.resume_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--accent)', textDecoration: 'none' }}
+              >
+                <ExternalLink size={11} /> View resume
+              </a>
+            </div>
+          )}
+
           <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>
             Upload a PDF to auto-fill name, email, phone, skills, experience and more.
+            {isSupabaseReady && ' The file is also saved to cloud storage.'}
           </p>
         </FormSection>
 

@@ -8,6 +8,7 @@ import toast from 'react-hot-toast'
 
 interface ResumeUploadProps {
   onParsed: (fields: Partial<TalentProfile>, rawText: string) => void
+  onFileSelected?: (file: File) => void
   className?: string
 }
 
@@ -30,7 +31,7 @@ function FieldBadge({ label }: { label: string }) {
   )
 }
 
-export default function ResumeUpload({ onParsed }: ResumeUploadProps) {
+export default function ResumeUpload({ onParsed, onFileSelected }: ResumeUploadProps) {
   const [status, setStatus] = useState<Status>('idle')
   const [fileName, setFileName] = useState('')
   const [parsed, setParsed] = useState<ParsedResume | null>(null)
@@ -48,6 +49,9 @@ export default function ResumeUpload({ onParsed }: ResumeUploadProps) {
       toast.error('File too large (max 15 MB)')
       return
     }
+
+    // Notify parent immediately so Supabase upload can begin in parallel
+    onFileSelected?.(file)
 
     setFileName(file.name)
     setStatus('reading')

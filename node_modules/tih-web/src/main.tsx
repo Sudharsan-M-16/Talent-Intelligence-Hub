@@ -3,6 +3,13 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
 
+// Clean up old Zustand auth-storage key that's no longer used (authStore no longer uses persist middleware)
+try {
+  if (localStorage.getItem('auth-storage')) {
+    localStorage.removeItem('auth-storage')
+  }
+} catch {}
+
 // Apply persisted or default theme before first paint (prevents flash)
 const storedTheme = localStorage.getItem('tih-theme') as 'light' | 'dark' | null
 document.documentElement.setAttribute('data-theme', storedTheme ?? 'dark')

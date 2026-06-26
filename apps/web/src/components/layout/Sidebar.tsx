@@ -72,8 +72,7 @@ export default function Sidebar({ collapsed, onToggle, isMobile = false, mobileO
   ]
 
   const handleLogout = () => {
-    logout()
-    navigate('/login')
+    logout().then(() => navigate('/login', { replace: true }))
   }
 
   return (
@@ -315,9 +314,10 @@ export default function Sidebar({ collapsed, onToggle, isMobile = false, mobileO
         <button
           onClick={() => navigate('/about')}
           title="User Guide & Profile"
+          aria-label="User Guide & Profile"
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}
         >
-          <TalentAvatar name={user?.full_name || 'User'} size={30} />
+          <TalentAvatar name={user?.full_name || 'User'} size={30} imageUrl={user?.avatar_url} />
         </button>
         <AnimatePresence>
           {(!collapsed || isMobile) && (
@@ -351,6 +351,7 @@ export default function Sidebar({ collapsed, onToggle, isMobile = false, mobileO
           <button
             onClick={handleLogout}
             title="Sign out"
+            aria-label="Sign out"
             style={{
               background: 'none',
               border: 'none',

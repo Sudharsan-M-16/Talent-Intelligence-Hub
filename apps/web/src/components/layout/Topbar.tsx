@@ -164,6 +164,7 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
           {query ? (
             <button
               onClick={() => { setQuery(''); setSearchOpen(false) }}
+              aria-label="Clear search"
               style={{
                 position: 'absolute',
                 right: 8,
@@ -435,7 +436,7 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
           aria-label="Account settings"
           title="Account settings"
         >
-          <TalentAvatar name={user?.full_name || 'U'} size={28} />
+          <TalentAvatar name={user?.full_name || 'U'} size={28} imageUrl={user?.avatar_url} />
         </button>
       </div>
     </header>

@@ -263,8 +263,7 @@ export default function AboutPage() {
   const { user, logout } = useAuthStore()
 
   const handleLogout = () => {
-    logout()
-    navigate('/login')
+    logout().then(() => navigate('/login', { replace: true }))
   }
 
   return (

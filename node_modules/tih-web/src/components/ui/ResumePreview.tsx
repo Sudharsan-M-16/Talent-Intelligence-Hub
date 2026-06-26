@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { X, FileText, Loader2 } from 'lucide-react'
 import * as pdfjsLib from 'pdfjs-dist'
+import { safeUrl } from '../../lib/utils'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -226,9 +227,9 @@ export default function ResumePreview({ resumeUrl, resumeFile, onClose }: Resume
           >
             <FileText size={36} strokeWidth={1.2} />
             <span style={{ fontSize: 13 }}>Preview not available for this file type.</span>
-            {resumeUrl && (
+            {safeUrl(resumeUrl) && (
               <a
-                href={resumeUrl}
+                href={safeUrl(resumeUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-secondary"
@@ -273,9 +274,9 @@ export default function ResumePreview({ resumeUrl, resumeFile, onClose }: Resume
           >
             <FileText size={36} strokeWidth={1.2} />
             <span style={{ fontSize: 13 }}>{error}</span>
-            {resumeUrl && (
+            {safeUrl(resumeUrl) && (
               <a
-                href={resumeUrl}
+                href={safeUrl(resumeUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-secondary"

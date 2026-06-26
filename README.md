@@ -29,6 +29,7 @@ A production-grade talent repository and evaluation platform for recruiters, HR 
 - **Dashboard Analytics** — stat cards, pipeline funnel chart, candidate source donut, top-rated profiles
 - **Dark / Light Theme** — system-aware toggle with zero flash on load
 - **Demo Mode** — works entirely from localStorage; no server, no sign-up
+- **Supabase Auth** — Email + Password login, Google OAuth, email verification, password reset via email link, persistent sessions (auto-refreshed), multi-view login page
 
 ---
 
@@ -54,12 +55,45 @@ The app works immediately in demo mode with pre-seeded candidate data. To enable
 
 ---
 
+## Demo Mode vs Production Mode
+
+| | Demo Mode | Production Mode |
+|---|---|---|
+| Supabase env vars | Not set | `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` set |
+| Auth | Always logs in as a fixed admin user | Real Supabase Auth (email/password, Google OAuth) |
+| Data storage | Zustand in localStorage | Zustand in localStorage (Supabase data queries are the next step) |
+| Sessions | Simulated | Real sessions; auto-refreshed; persist across reloads |
+| Google OAuth button | Shown but disabled (tooltip explains why) | Fully functional (requires Google provider enabled in Supabase) |
+
+---
+
+## Authentication Features
+
+When Supabase is configured (`VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` set):
+
+- **Email + Password** — sign up with email verification, log in, reset password
+- **Google OAuth** — one-click sign-in via Google (requires setup below)
+- **Password Reset** — sends an email link; `/reset-password` page handles the callback
+- **Email Verification** — sent on signup; `/auth/callback` handles the confirmation link
+- **Session Persistence** — Supabase stores sessions in localStorage; users stay logged in across reloads until they sign out or the session expires
+- **Multi-view Login Page** — login, sign up, forgot password, and check-email views all in one page (violet/indigo palette, WebGL grid)
+
+### Google OAuth Setup
+
+1. In [Supabase Dashboard](https://supabase.com/dashboard) → **Auth → Providers → Google** — enable the provider
+2. Create OAuth credentials in [Google Cloud Console](https://console.cloud.google.com/) and copy the Client ID and Secret into Supabase
+3. In Supabase Dashboard → **Auth → URL Configuration → Redirect URLs**, add:
+   - `http://localhost:5173/auth/callback` (local development)
+   - `https://yourdomain.com/auth/callback` (production)
+
+---
+
 ## Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `VITE_SUPABASE_URL` | No | Supabase project URL. Leave blank for demo mode. |
-| `VITE_SUPABASE_ANON_KEY` | No | Supabase anon key. Leave blank for demo mode. |
+| `VITE_SUPABASE_URL` | No | Supabase project URL. Omit to run in demo mode (no real auth or backend). |
+| `VITE_SUPABASE_ANON_KEY` | No | Supabase anon/public key. Omit to run in demo mode. |
 | `VITE_GROQ_API_KEY` | No | Groq API key for AI resume parsing. Get one at [console.groq.com/keys](https://console.groq.com/keys). |
 | `VITE_GROQ_MODEL` | No | Override the Groq model. Defaults to `llama-3.3-70b-versatile`. |
 
@@ -90,7 +124,7 @@ apps/web/
 |-------|--------|
 | Framework | React 18 + TypeScript + Vite |
 | Styling | TailwindCSS v4 (`@import "tailwindcss"` only — no config file) |
-| State | Zustand v5 with `persist` middleware |
+| State | Zustand v5 with `persist` middleware (talent data); authStore uses Supabase native session persistence |
 | Routing | React Router v7 |
 | Animation | framer-motion |
 | Tables | @tanstack/react-table v8 |
@@ -123,7 +157,9 @@ npm run build       # tsc -b && vite build
 
 ## Supabase Setup
 
-The database schema is fully written and ready to deploy. To connect a real backend:
+**Auth is already wired up.** Once you add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`, login, signup, Google OAuth, and password reset all work without any code changes.
+
+To also connect the talent data to a real database:
 
 1. Create a Supabase project
 2. Run `supabase/schema.sql` in the SQL editor

@@ -1,6 +1,6 @@
 # Talent Intelligence Hub (TIH) — Claude Code Guide
 
-A centralized talent repository and evaluation platform built for recruiters, HR teams, and hiring managers. Single-tenant demo mode works out of the box; Supabase backend is schema-ready but not yet wired up.
+A centralized talent repository and evaluation platform built for recruiters, HR teams, and hiring managers. Demo mode works out of the box with no backend; Supabase Auth is fully wired up and ready for production use.
 
 ---
 
@@ -67,7 +67,7 @@ npm test             # vitest (244 tests, 9 files — all must pass)
 - `Figtree` — body text, buttons, inputs, all UI
 - `JetBrains Mono` — numeric data (stat card values, timestamps, rankings)
 
-**Login page exception**: Login has its own isolated design palette (`#0A0400` bg, `#FF8A00` orange accent, WebGL perspective grid). It also uses `Inter`. Do not apply main-app CSS tokens there.
+**Login page exception**: Login has its own isolated design palette (`#06060f` bg, `#7c3aed` violet/indigo accent, WebGL perspective grid). It also uses `Inter`. Do not apply main-app CSS tokens there.
 
 **CSS Variables** (defined in `src/index.css`, applied via `data-theme` attribute):
 - Dark palette: `#0c0c0f` base → `#111114` primary → `#1a1a1e` card
@@ -93,6 +93,9 @@ All pages are lazy-loaded via `React.lazy` for code splitting.
 
 | Route | Page | Purpose |
 |-------|------|---------|
+| `/login` | LoginPage | Multi-view auth page: login, signup, forgot password, check-email; Google OAuth; violet palette |
+| `/auth/callback` | AuthCallbackPage | Handles OAuth redirects and email verification links; resolves session then navigates to /dashboard or /reset-password |
+| `/reset-password` | ResetPasswordPage | Allows setting a new password after clicking the email reset link; calls `supabase.auth.updateUser` |
 | `/dashboard` | DashboardPage | Stat cards, pipeline chart, source donut, top rated, activity |
 | `/talent` | TalentListPage | Table + grid view, skill filter autocomplete, CSV/Excel export |
 | `/talent/new` | TalentFormPage | Create profile with resume auto-fill |
@@ -118,7 +121,24 @@ All pages are lazy-loaded via `React.lazy` for code splitting.
 Zustand store persisted to localStorage. Key method: `filteredProfiles()` — applies all active `TalentFilters` to `profiles` array. The `activities[]` array feeds the notification bell in the Topbar. Adding a new filter type requires updating both the `TalentFilters` interface in `types/database.ts` and the filter logic here.
 
 ### `src/store/authStore.ts`
-Single-admin demo mode — `login()` always succeeds and returns `ADMIN_USER`. To connect Supabase auth: replace `login()` with `supabase.auth.signInWithPassword()`.
+Full Supabase Auth integration. Does **not** use Zustand `persist` middleware — Supabase manages session persistence natively in localStorage (`sb-{projectRef}-auth-token`).
+
+Key exports: `AuthUser` interface, `DEMO_ADMIN_USER` constant.
+
+Key state: `isLoading: true` on startup — routes must not render until `init()` resolves.
+
+Key methods:
+- `init()` — call once on app mount; calls `supabase.auth.getSession()` and subscribes to `onAuthStateChange`. Falls back to demo mode if Supabase env vars are absent.
+- `login(email, password)` — calls `supabase.auth.signInWithPassword()`
+- `signup(email, password, fullName)` — calls `supabase.auth.signUp()`; sends verification email
+- `loginWithGoogle()` — calls `supabase.auth.signInWithOAuth({ provider: 'google' })`; requires Google provider enabled in Supabase Dashboard
+- `forgotPassword(email)` — calls `supabase.auth.resetPasswordForEmail()`; sends reset email
+- `logout()` — **async**; calls `supabase.auth.signOut()`. All callers must `await logout()` or use `.then()`
+
+**App.tsx integration:**
+- `AuthInitializer` component calls `init()` once on mount (guarded with `useRef`)
+- `ProtectedRoute` checks `isLoading` — shows `PageLoader` while session resolves, then redirects to `/login` if unauthenticated
+- `AuthRoute` redirects already-authenticated users away from `/login`
 
 ### `src/lib/pdfParser.ts`
 Two-stage pipeline:
@@ -160,11 +180,41 @@ Templates are defined inline in EvaluationsPage; they are not stored in Zustand.
 
 ---
 
-## Auth & Demo Mode
+## Authentication Architecture
 
-- No real auth — `authStore` always logs in as `ADMIN_USER`
-- `supabase.ts` returns `null` when env vars are missing → all pages fall back to Zustand in-memory state
-- To reset demo data: Settings page → Reset Data, or clear `tih-talent-store-v2` from localStorage
+### Auth Flow
+
+```
+App loads → AuthInitializer.init() → supabase.auth.getSession()
+├── Session found → restore user → render app
+└── No session → isLoading: false → show /login
+
+/login → Google OAuth → /auth/callback → navigate /dashboard
+/login → Email + Password → login() → AuthRoute redirects → /dashboard
+/login → Sign Up → signup() → email verification sent → check-email view
+/login → Forgot Password → forgotPassword() → email sent → check-email view
+Email link click → /reset-password → updateUser({ password }) → /dashboard
+```
+
+### Session Persistence
+
+Supabase stores sessions in localStorage automatically (`sb-{projectRef}-auth-token`). On page reload, `init()` calls `getSession()` to restore the session — no explicit persist middleware needed. Sessions default to 1 hour and are auto-refreshed. The old stale `auth-storage` Zustand key is cleaned up in `main.tsx`.
+
+### Demo Mode vs Production Mode
+
+- **Demo mode** (no Supabase env vars): `authStore.init()` detects missing config and sets `DEMO_ADMIN_USER` directly. `login()` always succeeds. No network calls.
+- **Production mode** (Supabase env vars present): full Supabase Auth with real sessions, email verification, OAuth, and password reset.
+
+`supabase.ts` returns `null` when env vars are missing — all data pages fall back to Zustand in-memory state in this case.
+
+To reset demo data: Settings page → Reset Data, or clear `tih-talent-store-v2` from localStorage.
+
+### Google OAuth Setup (production only)
+
+1. Enable Google provider in Supabase Dashboard → Auth → Providers → Google
+2. Add Google OAuth credentials (Client ID + Secret from Google Cloud Console)
+3. Add `http://localhost:5173/auth/callback` to Supabase Dashboard → Auth → URL Configuration → Redirect URLs
+4. Add your production URL: `https://yourdomain.com/auth/callback`
 
 ---
 
@@ -180,10 +230,10 @@ VITE_GROQ_MODEL=            # optional override, defaults to llama-3.3-70b-versa
 
 ---
 
-## Supabase Integration (not yet connected)
+## Supabase Integration
 
-Schema is complete in `supabase/schema.sql`. To connect:
-1. Create Supabase project → run schema.sql in SQL editor
+**Auth is fully connected.** The database schema for talent data is complete in `supabase/schema.sql` but talent data queries still use Zustand in-memory state. To connect data persistence:
+1. Create Supabase project → run `supabase/schema.sql` in SQL editor
 2. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to `.env.local`
 3. Replace demo stores with Supabase queries (each store has comments marking swap points)
 
@@ -194,8 +244,9 @@ Full instructions in `supabase/SETUP.md`.
 ## Conventions & Rules
 
 - **No tailwind.config.js** — TailwindCSS v4 is imported as `@import "tailwindcss"` only
-- **CSS variables for all colors** — never inline raw hex values in JSX/TSX; the login page is the one explicit exception
+- **CSS variables for all colors** — never inline raw hex values in JSX/TSX; the login page (isolated violet/indigo palette) is the one explicit exception
 - **Figtree** for all UI text, **Syne** for headings, **JetBrains Mono** for numbers; **Inter** on the login page only
+- **`logout()` is async** — always `await authStore.logout()` or chain `.then()`; never call it fire-and-forget
 - **`npm run typecheck` must pass** before any change is complete
 - **No role-based access** — single admin only, no viewer/recruiter role checks
 - Skill chips use `border-radius: 5px` (rectangular), not pill shape

@@ -1492,6 +1492,9 @@ export default function TalentListPage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 12 }}
               transition={{ duration: 0.18 }}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="export-modal-title"
               style={{
                 background: 'var(--bg-card)',
                 border: '1px solid var(--border)',
@@ -1505,12 +1508,13 @@ export default function TalentListPage() {
               onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'Figtree', sans-serif", margin: 0 }}>
+                <h2 id="export-modal-title" style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'Figtree', sans-serif", margin: 0 }}>
                   Export Profiles
                 </h2>
                 <button
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', padding: 4 }}
                   onClick={() => setShowExportModal(false)}
+                  aria-label="Close export dialog"
                 >
                   <X size={16} />
                 </button>

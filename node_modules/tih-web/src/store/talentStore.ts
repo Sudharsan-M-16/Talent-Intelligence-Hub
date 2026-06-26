@@ -1,7 +1,25 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import toast from 'react-hot-toast'
 import type { TalentProfile, Tag, TalentFilters, SavedSearch, Activity } from '../types/database'
 import { demoProfiles, demoTags } from '../lib/demoData'
+import { isSupabaseReady } from '../lib/supabase'
+import {
+  fetchProfiles,
+  fetchTags,
+  fetchActivities,
+  fetchSavedSearches,
+  createProfileInDb,
+  updateProfileInDb,
+  softDeleteProfile,
+  bulkUpdateStatusInDb,
+  createTagInDb,
+  updateTagInDb,
+  deleteTagInDb,
+  logActivityInDb,
+  createSavedSearchInDb,
+  deleteSavedSearchInDb,
+} from '../lib/talentService'
 
 interface TalentStore {
   profiles: TalentProfile[]
@@ -13,7 +31,15 @@ interface TalentStore {
   savedSearches: SavedSearch[]
   activities: Activity[]
 
+  // Supabase context (set after login — not persisted to localStorage)
+  orgId: string | null
+  userId: string | null
+  isLoadingData: boolean
+
   // Actions
+  setOrgContext: (orgId: string, userId: string) => void
+  loadFromSupabase: (orgId: string, userId: string) => Promise<void>
+
   setProfiles: (profiles: TalentProfile[]) => void
   addProfile: (profile: TalentProfile) => void
   addProfiles: (profiles: TalentProfile[]) => void
@@ -43,60 +69,145 @@ interface TalentStore {
 export const useTalentStore = create<TalentStore>()(
   persist(
     (set, get) => ({
-      profiles: demoProfiles,
-      tags: demoTags,
-      filters: {},
-      selectedIds: [],
-      compareIds: [],
-      viewMode: 'table',
+      profiles:      demoProfiles,
+      tags:          demoTags,
+      filters:       {},
+      selectedIds:   [],
+      compareIds:    [],
+      viewMode:      'table',
       savedSearches: [],
-      activities: [],
+      activities:    [],
+      orgId:         null,
+      userId:        null,
+      isLoadingData: false,
+
+      // ─── Supabase Context ──────────────────────────────────────────────────
+
+      setOrgContext: (orgId, userId) => set({ orgId, userId }),
+
+      loadFromSupabase: async (orgId, userId) => {
+        if (!isSupabaseReady) return
+        set({ isLoadingData: true, orgId, userId })
+        try {
+          const [profiles, tags, activities, savedSearches] = await Promise.all([
+            fetchProfiles(orgId),
+            fetchTags(orgId),
+            fetchActivities(orgId),
+            fetchSavedSearches(orgId, userId),
+          ])
+          set({ profiles, tags, activities, savedSearches })
+        } catch (err) {
+          console.error('[TIH] loadFromSupabase failed:', err)
+        } finally {
+          set({ isLoadingData: false })
+        }
+      },
+
+      // ─── Profile Actions ───────────────────────────────────────────────────
 
       setProfiles: (profiles) => set({ profiles }),
 
       addProfile: (profile) => {
+        // Optimistic update
         set((s) => ({ profiles: [profile, ...s.profiles] }))
-        get().addActivity({
-          organization_id: 'demo-org-001',
-          talent_id: profile.id,
-          action: 'PROFILE_CREATED',
-          description: `New profile added for ${profile.full_name} via ${profile.source}`,
-          created_by: 'demo-user-001',
-        })
+
+        const { orgId, userId } = get()
+        if (isSupabaseReady && orgId) {
+          createProfileInDb(profile, orgId).then((saved) => {
+            if (!saved) {
+              set((s) => ({ profiles: s.profiles.filter((p) => p.id !== profile.id) }))
+              toast.error('Failed to save profile. Please try again.')
+            }
+            // DB trigger auto-logs PROFILE_CREATED in activity_log
+          })
+        } else {
+          // Demo mode — log locally
+          get().addActivity({
+            organization_id: orgId ?? 'demo-org-001',
+            talent_id:       profile.id,
+            action:          'PROFILE_CREATED',
+            description:     `New profile added for ${profile.full_name} via ${profile.source}`,
+            created_by:      userId ?? 'demo-user-001',
+          })
+        }
       },
 
       addProfiles: (profiles) =>
         set((s) => ({ profiles: [...profiles, ...s.profiles] })),
 
-      updateProfile: (id, updates) =>
+      updateProfile: (id, updates) => {
         set((s) => ({
           profiles: s.profiles.map((p) =>
             p.id === id ? { ...p, ...updates, updated_at: new Date().toISOString() } : p
           ),
-        })),
+        }))
 
-      deleteProfile: (id) =>
+        const { orgId } = get()
+        if (isSupabaseReady && orgId) {
+          updateProfileInDb(id, updates, orgId).then((ok) => {
+            if (!ok) toast.error('Failed to update profile.')
+          })
+        }
+      },
+
+      deleteProfile: (id) => {
+        const prev = get().profiles
         set((s) => ({
-          profiles: s.profiles.filter((p) => p.id !== id),
-          compareIds: s.compareIds.filter((cid) => cid !== id),
+          profiles:    s.profiles.filter((p) => p.id !== id),
+          compareIds:  s.compareIds.filter((cid) => cid !== id),
           selectedIds: s.selectedIds.filter((sid) => sid !== id),
-        })),
+        }))
+
+        if (isSupabaseReady) {
+          softDeleteProfile(id).then((ok) => {
+            if (!ok) {
+              set({ profiles: prev })
+              toast.error('Failed to delete profile.')
+            }
+          })
+        }
+      },
 
       toggleShortlist: (id) => {
         const profile = get().profiles.find((p) => p.id === id)
         const wasShortlisted = profile?.is_shortlisted ?? false
+        const newVal = !wasShortlisted
+
         set((s) => ({
           profiles: s.profiles.map((p) =>
-            p.id === id ? { ...p, is_shortlisted: !p.is_shortlisted } : p
+            p.id === id ? { ...p, is_shortlisted: newVal } : p
           ),
         }))
-        if (!wasShortlisted) {
+
+        const { orgId, userId } = get()
+        if (isSupabaseReady && orgId) {
+          updateProfileInDb(id, { is_shortlisted: newVal }, orgId).then((ok) => {
+            if (!ok) {
+              set((s) => ({
+                profiles: s.profiles.map((p) =>
+                  p.id === id ? { ...p, is_shortlisted: wasShortlisted } : p
+                ),
+              }))
+              toast.error('Failed to update shortlist status.')
+              return
+            }
+            if (newVal && userId) {
+              logActivityInDb(orgId, userId, {
+                organization_id: orgId,
+                talent_id:       id,
+                action:          'SHORTLISTED',
+                description:     'Profile shortlisted',
+                created_by:      userId,
+              })
+            }
+          })
+        } else if (newVal) {
           get().addActivity({
-            organization_id: 'demo-org-001',
-            talent_id: id,
-            action: 'SHORTLISTED',
-            description: 'Profile shortlisted',
-            created_by: 'demo-user-001',
+            organization_id: orgId ?? 'demo-org-001',
+            talent_id:       id,
+            action:          'SHORTLISTED',
+            description:     'Profile shortlisted',
+            created_by:      userId ?? 'demo-user-001',
           })
         }
       },
@@ -104,26 +215,49 @@ export const useTalentStore = create<TalentStore>()(
       toggleFavorite: (id) => {
         const profile = get().profiles.find((p) => p.id === id)
         const wasFavorite = profile?.is_favorite ?? false
+        const newVal = !wasFavorite
+
         set((s) => ({
           profiles: s.profiles.map((p) =>
-            p.id === id ? { ...p, is_favorite: !p.is_favorite } : p
+            p.id === id ? { ...p, is_favorite: newVal } : p
           ),
         }))
-        if (!wasFavorite) {
+
+        const { orgId, userId } = get()
+        if (isSupabaseReady && orgId) {
+          updateProfileInDb(id, { is_favorite: newVal }, orgId).then((ok) => {
+            if (!ok) {
+              set((s) => ({
+                profiles: s.profiles.map((p) =>
+                  p.id === id ? { ...p, is_favorite: wasFavorite } : p
+                ),
+              }))
+              toast.error('Failed to update favorite status.')
+              return
+            }
+            if (newVal && userId) {
+              logActivityInDb(orgId, userId, {
+                organization_id: orgId,
+                talent_id:       id,
+                action:          'FAVORITED',
+                description:     'Profile added to favorites',
+                created_by:      userId,
+              })
+            }
+          })
+        } else if (newVal) {
           get().addActivity({
-            organization_id: 'demo-org-001',
-            talent_id: id,
-            action: 'FAVORITED',
-            description: 'Profile added to favorites',
-            created_by: 'demo-user-001',
+            organization_id: orgId ?? 'demo-org-001',
+            talent_id:       id,
+            action:          'FAVORITED',
+            description:     'Profile added to favorites',
+            created_by:      userId ?? 'demo-user-001',
           })
         }
       },
 
-      setFilters: (filters) => set({ filters }),
-
-      clearFilters: () => set({ filters: {} }),
-
+      setFilters:     (filters) => set({ filters }),
+      clearFilters:   () => set({ filters: {} }),
       setSelectedIds: (ids) => set({ selectedIds: ids }),
 
       toggleCompare: (id) =>
@@ -135,8 +269,7 @@ export const useTalentStore = create<TalentStore>()(
         }),
 
       clearCompare: () => set({ compareIds: [] }),
-
-      setViewMode: (mode) => set({ viewMode: mode }),
+      setViewMode:  (mode) => set({ viewMode: mode }),
 
       updateStatus: (id, status) => {
         set((s) => ({
@@ -144,36 +277,78 @@ export const useTalentStore = create<TalentStore>()(
             p.id === id ? { ...p, status, updated_at: new Date().toISOString() } : p
           ),
         }))
-        get().addActivity({
-          organization_id: 'demo-org-001',
-          talent_id: id,
-          action: 'STATUS_CHANGED',
-          description: `Status changed to ${status}`,
-          created_by: 'demo-user-001',
-        })
+
+        const { orgId, userId } = get()
+        if (isSupabaseReady && orgId) {
+          // DB trigger (trg_log_status_change) auto-logs STATUS_CHANGED
+          updateProfileInDb(id, { status }, orgId).then((ok) => {
+            if (!ok) toast.error('Failed to update status.')
+          })
+        } else {
+          get().addActivity({
+            organization_id: orgId ?? 'demo-org-001',
+            talent_id:       id,
+            action:          'STATUS_CHANGED',
+            description:     `Status changed to ${status}`,
+            created_by:      userId ?? 'demo-user-001',
+          })
+        }
       },
 
       saveSearch: (name, filters) => {
         const search: SavedSearch = {
-          id: crypto.randomUUID(),
-          user_id: 'demo-user-001',
+          id:           crypto.randomUUID(),
+          user_id:      get().userId ?? 'demo-user-001',
           name,
           filters_json: filters,
-          created_at: new Date().toISOString(),
+          created_at:   new Date().toISOString(),
         }
         set((s) => ({ savedSearches: [...s.savedSearches, search] }))
+
+        const { orgId, userId } = get()
+        if (isSupabaseReady && orgId && userId) {
+          createSavedSearchInDb(orgId, userId, name, filters).then((saved) => {
+            if (!saved) {
+              set((s) => ({ savedSearches: s.savedSearches.filter((ss) => ss.id !== search.id) }))
+              toast.error('Failed to save search.')
+            } else {
+              // Replace temp id with DB-generated id
+              set((s) => ({
+                savedSearches: s.savedSearches.map((ss) =>
+                  ss.id === search.id ? saved : ss
+                ),
+              }))
+            }
+          })
+        }
       },
 
-      deleteSavedSearch: (id) =>
-        set((s) => ({ savedSearches: s.savedSearches.filter((ss) => ss.id !== id) })),
+      deleteSavedSearch: (id) => {
+        const prev = get().savedSearches
+        set((s) => ({ savedSearches: s.savedSearches.filter((ss) => ss.id !== id) }))
+
+        if (isSupabaseReady) {
+          deleteSavedSearchInDb(id).then((ok) => {
+            if (!ok) {
+              set({ savedSearches: prev })
+              toast.error('Failed to delete saved search.')
+            }
+          })
+        }
+      },
 
       addActivity: (activity) => {
         const newActivity: Activity = {
           ...activity,
-          id: crypto.randomUUID(),
+          id:         crypto.randomUUID(),
           created_at: new Date().toISOString(),
         }
         set((s) => ({ activities: [newActivity, ...s.activities] }))
+
+        const { orgId, userId } = get()
+        if (isSupabaseReady && orgId) {
+          logActivityInDb(orgId, userId ?? '', activity)
+        }
       },
 
       bulkUpdateStatus: (ids, status) => {
@@ -182,33 +357,78 @@ export const useTalentStore = create<TalentStore>()(
             ids.includes(p.id) ? { ...p, status, updated_at: new Date().toISOString() } : p
           ),
         }))
-        ids.forEach((id) => {
-          get().addActivity({
-            organization_id: 'demo-org-001',
-            talent_id: id,
-            action: 'STATUS_CHANGED',
-            description: `Status changed to ${status}`,
-            created_by: 'demo-user-001',
+
+        const { orgId, userId } = get()
+        if (isSupabaseReady && orgId) {
+          // DB trigger logs STATUS_CHANGED for each updated row automatically
+          bulkUpdateStatusInDb(ids, status).then((ok) => {
+            if (!ok) toast.error('Failed to update some statuses.')
           })
-        })
+        } else {
+          ids.forEach((id) => {
+            get().addActivity({
+              organization_id: orgId ?? 'demo-org-001',
+              talent_id:       id,
+              action:          'STATUS_CHANGED',
+              description:     `Status changed to ${status}`,
+              created_by:      userId ?? 'demo-user-001',
+            })
+          })
+        }
       },
 
+      // ─── Tag Actions ───────────────────────────────────────────────────────
+
       addTag: (tag) => {
+        const tempId = crypto.randomUUID()
         const newTag: Tag = {
           ...tag,
-          id: crypto.randomUUID(),
+          id:         tempId,
           created_at: new Date().toISOString(),
         }
         set((s) => ({ tags: [...s.tags, newTag] }))
+
+        const { orgId } = get()
+        if (isSupabaseReady && orgId) {
+          createTagInDb(tag, orgId).then((saved) => {
+            if (!saved) {
+              set((s) => ({ tags: s.tags.filter((t) => t.id !== tempId) }))
+              toast.error('Failed to create tag.')
+            } else {
+              // Replace temp id with DB-generated id
+              set((s) => ({
+                tags: s.tags.map((t) => (t.id === tempId ? saved : t)),
+              }))
+            }
+          })
+        }
       },
 
-      updateTag: (id, updates) =>
+      updateTag: (id, updates) => {
         set((s) => ({
           tags: s.tags.map((t) => (t.id === id ? { ...t, ...updates } : t)),
-        })),
+        }))
+        if (isSupabaseReady) {
+          updateTagInDb(id, updates).then((ok) => {
+            if (!ok) toast.error('Failed to update tag.')
+          })
+        }
+      },
 
-      deleteTag: (id) =>
-        set((s) => ({ tags: s.tags.filter((t) => t.id !== id) })),
+      deleteTag: (id) => {
+        const prev = get().tags
+        set((s) => ({ tags: s.tags.filter((t) => t.id !== id) }))
+        if (isSupabaseReady) {
+          deleteTagInDb(id).then((ok) => {
+            if (!ok) {
+              set({ tags: prev })
+              toast.error('Failed to delete tag.')
+            }
+          })
+        }
+      },
+
+      // ─── Computed ──────────────────────────────────────────────────────────
 
       /**
        * Returns only is_active profiles that pass all active filter criteria.
@@ -258,23 +478,23 @@ export const useTalentStore = create<TalentStore>()(
             )
           )
         if (filters.is_shortlisted) result = result.filter((p) => p.is_shortlisted)
-        if (filters.is_favorite) result = result.filter((p) => p.is_favorite)
+        if (filters.is_favorite)    result = result.filter((p) => p.is_favorite)
 
         return result
       },
     }),
     {
       name: 'tih-talent-store-v2',
+      // orgId, userId, isLoadingData are NOT persisted (session-derived from auth)
       partialize: (s) => ({
-        profiles: s.profiles,
-        tags: s.tags,
-        viewMode: s.viewMode,
+        profiles:      s.profiles,
+        tags:          s.tags,
+        viewMode:      s.viewMode,
         savedSearches: s.savedSearches,
-        activities: s.activities,
+        activities:    s.activities,
       }),
       /**
-       * merge: guards persisted data against schema corruption.
-       * Falls back to current (default) state if persisted value is absent or malformed.
+       * Validate persisted data against schema; fall back to defaults if malformed.
        */
       merge: (persisted: unknown, current) => {
         const p = persisted as Partial<typeof current>
