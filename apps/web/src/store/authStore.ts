@@ -85,10 +85,15 @@ export const useAuthStore = create<AuthStore>()((set) => ({
     // getSession() below for that, which correctly awaits any in-flight token refresh.
     if (authSubscription) authSubscription.unsubscribe()
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Skip INITIAL_SESSION — handled by getSession() below to avoid double-resolve.
+      // INITIAL_SESSION is handled by getSession() below — skip to avoid double-resolve.
       if (event === 'INITIAL_SESSION') return
+      // TOKEN_REFRESHED is a silent background operation (Supabase refreshes the token
+      // when the tab regains focus). Never show a loading screen for this — it fires
+      // every time the user switches back to this tab and would flash the PageLoader.
+      if (event === 'TOKEN_REFRESHED') return
       if (session?.user) {
-        set({ isLoading: true })
+        // Only show loading for actual sign-in events, not silent token housekeeping.
+        if (!useAuthStore.getState().isAuthenticated) set({ isLoading: true })
         const user = await resolveUser(session.user)
         set({ user, isAuthenticated: true, isLoading: false })
       } else {
