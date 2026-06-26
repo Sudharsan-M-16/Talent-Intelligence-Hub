@@ -3,7 +3,11 @@ import { persist } from 'zustand/middleware'
 import toast from 'react-hot-toast'
 import type { TalentProfile, Tag, TalentFilters, SavedSearch, Activity } from '../types/database'
 import { demoProfiles, demoTags } from '../lib/demoData'
-import { isSupabaseReady } from '../lib/supabase'
+import { supabase, isSupabaseReady } from '../lib/supabase'
+import type { RealtimeChannel } from '@supabase/supabase-js'
+
+let _realtimeChannel: RealtimeChannel | null = null
+
 import {
   fetchProfiles,
   fetchTags,
@@ -96,6 +100,29 @@ export const useTalentStore = create<TalentStore>()(
             fetchSavedSearches(orgId, userId),
           ])
           set({ profiles, tags, activities, savedSearches })
+
+          // Set up real-time subscriptions so changes in other tabs/devices refresh local state
+          if (_realtimeChannel) {
+            supabase?.removeChannel(_realtimeChannel)
+            _realtimeChannel = null
+          }
+          if (supabase) {
+            _realtimeChannel = supabase
+              .channel(`tih-org-${orgId}`)
+              .on('postgres_changes', { event: '*', schema: 'public', table: 'talent_profiles', filter: `org_id=eq.${orgId}` }, async () => {
+                const updated = await fetchProfiles(orgId)
+                set({ profiles: updated })
+              })
+              .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_log', filter: `org_id=eq.${orgId}` }, async () => {
+                const updated = await fetchActivities(orgId)
+                set({ activities: updated })
+              })
+              .on('postgres_changes', { event: '*', schema: 'public', table: 'tags', filter: `org_id=eq.${orgId}` }, async () => {
+                const updated = await fetchTags(orgId)
+                set({ tags: updated })
+              })
+              .subscribe()
+          }
         } catch (err) {
           console.error('[TIH] loadFromSupabase failed:', err)
         } finally {

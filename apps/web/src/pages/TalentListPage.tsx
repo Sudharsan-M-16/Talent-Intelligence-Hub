@@ -1007,6 +1007,28 @@ export default function TalentListPage() {
               <Star size={12} /> Shortlist All
             </button>
             <button
+              className="btn-secondary"
+              style={{ height: 30, fontSize: 12 }}
+              onClick={() => {
+                const selected = filteredProfiles.filter(p => selectedIds.includes(p.id))
+                void exportProfiles(selected, 'csv', `tih-selected-${selectedIds.length}`)
+                toast.success(`Exported ${selected.length} profiles`)
+              }}
+            >
+              <Download size={12} /> Export CSV
+            </button>
+            <button
+              className="btn-secondary"
+              style={{ height: 30, fontSize: 12 }}
+              onClick={() => {
+                const selected = filteredProfiles.filter(p => selectedIds.includes(p.id))
+                void exportProfiles(selected, 'xlsx', `tih-selected-${selectedIds.length}`)
+                toast.success(`Exported ${selected.length} profiles`)
+              }}
+            >
+              <Download size={12} /> Export Excel
+            </button>
+            <button
               className="btn-danger"
               style={{ height: 30, fontSize: 12 }}
               onClick={() => {

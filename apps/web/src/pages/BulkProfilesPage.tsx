@@ -48,6 +48,7 @@ export default function BulkProfilesPage() {
   const [filters, setFilters] = useState(initialFilters)
   const [sessionImportIds, setSessionImportIds] = useState<Set<string>>(new Set())
   const [showOnlyImports, setShowOnlyImports] = useState(false)
+  const [stagedSelected, setStagedSelected] = useState<Set<string>>(new Set())
 
   const filteredProfiles = useMemo(() => {
     let result = filterProfilesForBulkPage(profiles, filters)
@@ -75,6 +76,8 @@ export default function BulkProfilesPage() {
       const { unique, duplicates } = removeDuplicateProfiles(result.profiles, profiles)
       setPendingProfiles(unique)
       setDuplicateProfiles(duplicates)
+      const allIds = new Set([...unique.map(p => p.id), ...duplicates.map(p => p.id)])
+      setStagedSelected(allIds)
       
       if (result.failedRows.length > 0) {
         toast.error(`${result.failedRows.length} rows failed parsing`)
@@ -94,6 +97,21 @@ export default function BulkProfilesPage() {
   const removePendingProfile = (id: string) => {
     setPendingProfiles((prev) => prev.filter((p) => p.id !== id))
     setDuplicateProfiles((prev) => prev.filter((p) => p.id !== id))
+    setStagedSelected((prev) => { const next = new Set(prev); next.delete(id); return next })
+  }
+
+  const importSelectedProfiles = () => {
+    const toImport = stagedProfiles.filter(p => stagedSelected.has(p.id))
+    if (!toImport.length) { toast.error('Select at least one profile to import'); return }
+    useTalentStore.getState().addProfiles(toImport)
+    const newIds = toImport.map(p => p.id)
+    setSessionImportIds(new Set(newIds))
+    setShowOnlyImports(true)
+    toast.success(`Imported ${toImport.length} profiles`)
+    setPendingProfiles([])
+    setDuplicateProfiles([])
+    setStagedSelected(new Set())
+    setParseReport(null)
   }
 
   const importPendingProfiles = (includeDuplicates: boolean) => {
@@ -269,15 +287,18 @@ export default function BulkProfilesPage() {
                   {/* Action Buttons */}
                   {(pendingProfiles.length > 0 || duplicateProfiles.length > 0) && (
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
-                      <button className="btn-primary" onClick={() => importPendingProfiles(false)}>
-                        Import Unique ({pendingProfiles.length})
+                      <button className="btn-primary" onClick={importSelectedProfiles}>
+                        Import Selected ({stagedSelected.size})
+                      </button>
+                      <button className="btn-secondary" onClick={() => importPendingProfiles(false)}>
+                        Import All Unique ({pendingProfiles.length})
                       </button>
                       {duplicateProfiles.length > 0 && (
-                        <button className="btn-secondary" onClick={() => importPendingProfiles(true)}>
-                          Import All Including Duplicates ({pendingProfiles.length + duplicateProfiles.length})
+                        <button className="btn-ghost" onClick={() => importPendingProfiles(true)}>
+                          Import All + Duplicates ({pendingProfiles.length + duplicateProfiles.length})
                         </button>
                       )}
-                      <button className="btn-ghost" onClick={() => { setPendingProfiles([]); setDuplicateProfiles([]); setParseReport(null) }}>
+                      <button className="btn-ghost" onClick={() => { setPendingProfiles([]); setDuplicateProfiles([]); setStagedSelected(new Set()); setParseReport(null) }}>
                         <X size={13} /> Cancel
                       </button>
                     </div>
@@ -385,6 +406,17 @@ export default function BulkProfilesPage() {
               <table className="data-table" style={{ width: '100%' }}>
                 <thead>
                   <tr>
+                    <th style={{ width: 40 }}>
+                      <input
+                        type="checkbox"
+                        checked={stagedSelected.size === stagedProfiles.length && stagedProfiles.length > 0}
+                        onChange={(e) => {
+                          if (e.target.checked) setStagedSelected(new Set(stagedProfiles.map(p => p.id)))
+                          else setStagedSelected(new Set())
+                        }}
+                        style={{ cursor: 'pointer' }}
+                      />
+                    </th>
                     <th>Name / Details</th>
                     <th>Extracted Skills</th>
                     <th>Experience</th>
@@ -399,6 +431,20 @@ export default function BulkProfilesPage() {
                     const isDup = duplicateProfiles.some(d => d.id === profile.id);
                     return (
                       <tr key={profile.id} style={{ background: isDup ? 'rgba(217, 119, 6, 0.05)' : undefined }}>
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={stagedSelected.has(profile.id)}
+                            onChange={(e) => {
+                              setStagedSelected(prev => {
+                                const next = new Set(prev)
+                                if (e.target.checked) next.add(profile.id); else next.delete(profile.id)
+                                return next
+                              })
+                            }}
+                            style={{ cursor: 'pointer' }}
+                          />
+                        </td>
                         <td>
                           <div style={{ color: 'var(--text-primary)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>
                             {profile.full_name}
@@ -429,7 +475,7 @@ export default function BulkProfilesPage() {
                   })}
                   {stagedProfiles.length === 0 && (
                     <tr>
-                      <td colSpan={7} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
+                      <td colSpan={8} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
                         No valid profiles found in staging.
                       </td>
                     </tr>
