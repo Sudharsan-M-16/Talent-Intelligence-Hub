@@ -519,6 +519,7 @@ export const useTalentStore = create<TalentStore>()(
         viewMode:      s.viewMode,
         savedSearches: s.savedSearches,
         activities:    s.activities,
+        filters:       s.filters,
       }),
       /**
        * Validate persisted data against schema; fall back to defaults if malformed.
@@ -548,6 +549,7 @@ export const useTalentStore = create<TalentStore>()(
                 (x) => x != null && typeof x === 'object' && typeof (x as Activity).id === 'string'
               )
             : current.activities,
+          filters: p?.filters != null && typeof p.filters === 'object' ? p.filters : current.filters,
         }
       },
     }

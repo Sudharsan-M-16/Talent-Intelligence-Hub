@@ -15,11 +15,30 @@ const SOURCES: TalentSource[] = ['WhatsApp', 'LinkedIn', 'Referral', 'Email', 'W
 
 export default function SearchPage() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { profiles } = useTalentStore()
-  const [localFilters, setLocalFilters] = useState<TalentFilters>({
+  const [localFilters, setLocalFilters] = useState<TalentFilters>(() => ({
     query: searchParams.get('q') || '',
-  })
+    status: searchParams.get('status') ? (searchParams.get('status')!.split(',') as TalentStatus[]) : undefined,
+    talent_type: searchParams.get('type') ? (searchParams.get('type')!.split(',') as TalentType[]) : undefined,
+    source: searchParams.get('source') ? (searchParams.get('source')!.split(',') as TalentSource[]) : undefined,
+    min_experience: searchParams.get('minExp') ? Number(searchParams.get('minExp')) : undefined,
+    max_experience: searchParams.get('maxExp') ? Number(searchParams.get('maxExp')) : undefined,
+    min_rating: searchParams.get('minRating') ? Number(searchParams.get('minRating')) : undefined,
+  }))
+
+  // Keep URL in sync with filters so tab reloads restore the search state
+  useEffect(() => {
+    const params: Record<string, string> = {}
+    if (localFilters.query) params.q = localFilters.query
+    if (localFilters.status?.length) params.status = localFilters.status.join(',')
+    if (localFilters.talent_type?.length) params.type = localFilters.talent_type.join(',')
+    if (localFilters.source?.length) params.source = localFilters.source.join(',')
+    if (localFilters.min_experience) params.minExp = String(localFilters.min_experience)
+    if (localFilters.max_experience) params.maxExp = String(localFilters.max_experience)
+    if (localFilters.min_rating) params.minRating = String(localFilters.min_rating)
+    setSearchParams(params, { replace: true })
+  }, [localFilters, setSearchParams])
   const [savedSearches, setSavedSearches] = useState<Array<{ id: string; name: string; filters: TalentFilters }>>([])
   const [saveName, setSaveName] = useState('')
   const [showSaveInput, setShowSaveInput] = useState(false)
