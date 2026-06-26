@@ -36,39 +36,84 @@ const FS = `
   uniform vec2  u_mouse;
   uniform vec2  u_res;
 
+  float hash(vec2 p) {
+    p = fract(p * vec2(127.1, 311.7));
+    p += dot(p, p + 43.21);
+    return fract(p.x * p.y);
+  }
+
   void main() {
     vec2 uv = gl_FragCoord.xy / u_res;
-    vec2 m  = (u_mouse / u_res - 0.5) * 0.035;
+
+    // Mouse tilt — subtle lateral lean
+    vec2 m = (u_mouse / u_res - 0.5) * 0.04;
     uv += m;
 
-    // Background #06060f — very dark blue-violet
     vec3 bg = vec3(0.024, 0.024, 0.059);
 
-    float pulse = 1.0 + 0.035 * sin(u_t * 0.42);
+    // Continuous forward flight — grid scrolls toward viewer
+    float scroll = u_t * 0.22;
+
+    // Slow autonomous lateral drift so it moves without any mouse input
+    float drift = sin(u_t * 0.09) * 0.06;
+
     float depth = clamp(uv.y, 0.001, 1.0);
     float pz    = 1.0 / (1.0 - depth * 0.82);
 
     vec2 pg = vec2(
-      (uv.x - 0.5) * pz * pulse * 1.1,
-       pz           * pulse * 0.28
+      (uv.x - 0.5 + drift) * pz * 1.1,
+       pz * 0.28 + scroll
     );
 
     float sz   = 1.0;
     vec2  cell = abs(fract(pg / sz + 0.5) - 0.5) * sz;
-    float lx   = smoothstep(0.05, 0.01, cell.x);
-    float ly   = smoothstep(0.05, 0.01, cell.y);
+    float lx   = smoothstep(0.048, 0.008, cell.x);
+    float ly   = smoothstep(0.048, 0.008, cell.y);
     float grid = max(lx, ly);
 
     float dFade = depth * depth * depth;
-    float eFade = smoothstep(0.0, 0.12, uv.x) * smoothstep(1.0, 0.88, uv.x);
+    float eFade = smoothstep(0.0, 0.10, uv.x) * smoothstep(1.0, 0.90, uv.x);
     float fade  = dFade * eFade;
 
-    // Violet #7c3aed = vec3(0.486, 0.227, 0.929)
-    vec3 violet = vec3(0.486, 0.227, 0.929);
-    float line  = grid * fade * 0.45;
-    float glow  = pow(depth, 4.0) * eFade * 0.02;
+    // Horizon glow — pulses gently at the vanishing point
+    float horizonY   = 0.72;
+    float horizonDist = abs(uv.y - horizonY);
+    float horizonGlow = smoothstep(0.22, 0.0, horizonDist)
+                      * (0.7 + 0.3 * sin(u_t * 0.6))
+                      * 0.055;
 
-    gl_FragColor = vec4(bg + violet * (line + glow), 1.0);
+    // Speed lines: bright streaks near the edges that pulse with scroll
+    float edgeDist = min(uv.x, 1.0 - uv.x);
+    float speedLine = smoothstep(0.18, 0.0, edgeDist)
+                    * smoothstep(0.3, 0.7, uv.y)
+                    * (0.5 + 0.5 * sin(u_t * 1.4 + uv.y * 8.0))
+                    * 0.06;
+
+    // Starfield — sparse twinkling dots in the upper region
+    float stars = 0.0;
+    vec2 starUV   = uv * vec2(90.0, 45.0);
+    vec2 starCell = floor(starUV);
+    float h       = hash(starCell);
+    if (h > 0.965) {
+      vec2  sp      = fract(starUV) - 0.5;
+      float twinkle = 0.4 + 0.6 * sin(u_t * (1.5 + h * 4.0) + h * 80.0);
+      float upperBias = smoothstep(0.3, 0.9, uv.y);
+      stars = smoothstep(0.12, 0.0, length(sp)) * twinkle * upperBias * 0.7;
+    }
+
+    vec3 violet = vec3(0.486, 0.227, 0.929);
+    vec3 indigo  = vec3(0.38,  0.18,  0.82);
+
+    float line = grid * fade * 0.42;
+    float glow = pow(depth, 4.0) * eFade * 0.018;
+
+    vec3 col = bg
+             + violet * (line + glow)
+             + violet * horizonGlow
+             + indigo * speedLine
+             + vec3(0.7, 0.75, 1.0) * stars;
+
+    gl_FragColor = vec4(col, 1.0);
   }
 `
 
