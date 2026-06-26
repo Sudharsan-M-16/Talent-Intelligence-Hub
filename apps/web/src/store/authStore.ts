@@ -67,6 +67,25 @@ async function resolveUser(sbUser: User): Promise<AuthUser> {
   return { ...mapped, organization_id: orgId ?? mapped.organization_id ?? 'demo-org-001' }
 }
 
+const USER_CACHE_KEY = 'tih-auth-user-v1'
+
+function readUserCache(): AuthUser | null {
+  try {
+    const raw = localStorage.getItem(USER_CACHE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as AuthUser
+    return parsed?.id ? parsed : null
+  } catch { return null }
+}
+
+function writeUserCache(user: AuthUser) {
+  try { localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user)) } catch {}
+}
+
+function clearUserCache() {
+  try { localStorage.removeItem(USER_CACHE_KEY) } catch {}
+}
+
 let authSubscription: { unsubscribe: () => void } | null = null
 
 export const useAuthStore = create<AuthStore>()((set) => ({
@@ -80,40 +99,49 @@ export const useAuthStore = create<AuthStore>()((set) => ({
       return
     }
 
-    // Subscribe for future events: TOKEN_REFRESHED, SIGNED_OUT, OAuth callbacks.
-    // onAuthStateChange is NOT used for the initial session check — we use
-    // getSession() below for that, which correctly awaits any in-flight token refresh.
+    // Optimistic restore: show the app immediately from cache while we verify
+    // the session in the background. Eliminates the flash of the login page on
+    // tab reload (Chrome tab eviction) caused by the async getSession() round-trip.
+    const cached = readUserCache()
+    if (cached) {
+      set({ user: cached, isAuthenticated: true, isLoading: false })
+    }
+
+    // Subscribe for future events after initial load.
     if (authSubscription) authSubscription.unsubscribe()
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // INITIAL_SESSION is handled by getSession() below — skip to avoid double-resolve.
       if (event === 'INITIAL_SESSION') return
-      // TOKEN_REFRESHED is a silent background operation (Supabase refreshes the token
-      // when the tab regains focus). Never show a loading screen for this — it fires
-      // every time the user switches back to this tab and would flash the PageLoader.
+      // TOKEN_REFRESHED = silent background token swap; session is already updated
+      // in localStorage by the SDK. No need to resolveUser again.
       if (event === 'TOKEN_REFRESHED') return
+
       if (session?.user) {
-        // Only show loading for actual sign-in events, not silent token housekeeping.
         if (!useAuthStore.getState().isAuthenticated) set({ isLoading: true })
         const user = await resolveUser(session.user)
+        writeUserCache(user)
         set({ user, isAuthenticated: true, isLoading: false })
-      } else {
+      } else if (event === 'SIGNED_OUT') {
+        clearUserCache()
         set({ user: null, isAuthenticated: false, isLoading: false })
       }
     })
     authSubscription = subscription
 
-    // getSession() awaits any pending token refresh before returning, so a returning
-    // user with an expired access_token but valid refresh_token will be resolved here.
+    // Verify the session for real. getSession() refreshes an expired access token
+    // if the refresh token is still valid. If it returns null, the cache was stale.
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
         const user = await resolveUser(session.user)
+        writeUserCache(user)
         set({ user, isAuthenticated: true, isLoading: false })
       } else {
-        set({ isLoading: false })
+        // No valid session — clear any stale cache and redirect to login
+        clearUserCache()
+        set({ user: null, isAuthenticated: false, isLoading: false })
       }
     } catch {
-      set({ isLoading: false })
+      if (!readUserCache()) set({ isLoading: false })
     }
   },
 
@@ -173,6 +201,7 @@ export const useAuthStore = create<AuthStore>()((set) => ({
   },
 
   logout: async () => {
+    clearUserCache()
     if (isSupabaseReady && supabase) {
       await supabase.auth.signOut().catch(() => {})
     }
