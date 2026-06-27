@@ -90,6 +90,10 @@ function clearUserCache() {
 
 let authSubscription: { unsubscribe: () => void } | null = null
 
+// True once init() has resolved the session. After this point isLoading must
+// never go true again — background token refreshes must be silent.
+let initDone = false
+
 // Read cache synchronously at module load — before any React render.
 // This makes isLoading: false immediately when a session exists, eliminating
 // the PageLoader flash on tab switch / page reload.
@@ -103,6 +107,7 @@ export const useAuthStore = create<AuthStore>()((set) => ({
   init: async () => {
     if (!isSupabaseReady || !supabase) {
       set({ isLoading: false })
+      initDone = true
       return
     }
 
@@ -112,18 +117,19 @@ export const useAuthStore = create<AuthStore>()((set) => ({
 
     if (authSubscription) authSubscription.unsubscribe()
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Only handle explicit new sign-ins (Google OAuth redirect, email magic link).
-      // TOKEN_REFRESHED, SIGNED_OUT, INITIAL_SESSION and USER_UPDATED are all
-      // intentionally ignored here:
-      //   - TOKEN_REFRESHED: SDK already updated localStorage; no UI change needed.
-      //   - SIGNED_OUT: fired spuriously by Supabase on every tab-focus token check.
-      //     Handling it causes a flash. Real logout is done by logout() directly.
-      //   - INITIAL_SESSION / others: handled by getSession() below.
+      // Only handle explicit new sign-ins (Google OAuth, email link, or fresh login).
+      // TOKEN_REFRESHED / SIGNED_OUT / INITIAL_SESSION are intentionally ignored:
+      //   - TOKEN_REFRESHED: SDK handles it silently; no UI change needed.
+      //   - SIGNED_OUT: fires spuriously on every tab-focus token check; real logout
+      //     is done via logout() which clears state directly.
+      //   - INITIAL_SESSION: handled by getSession() below.
       if (event !== 'SIGNED_IN') return
       if (!session?.user) return
 
+      // Only show loading screen if we have no user AND init hasn't completed yet.
+      // After initDone, all auth events must be silent to prevent tab-switch flash.
       const hasUser = !!useAuthStore.getState().user
-      if (!hasUser) set({ isLoading: true })
+      if (!hasUser && !initDone) set({ isLoading: true })
       const user = await resolveUser(session.user)
       writeUserCache(user)
       set({ user, isAuthenticated: true, isLoading: false })
@@ -131,19 +137,28 @@ export const useAuthStore = create<AuthStore>()((set) => ({
     authSubscription = subscription
 
     // Verify cache. getSession() also refreshes an expired access token if the
-    // refresh token is still valid. Returns null only when genuinely logged out.
+    // refresh token is still valid. Returns null only when truly logged out.
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
         const user = await resolveUser(session.user)
         writeUserCache(user)
         set({ user, isAuthenticated: true, isLoading: false })
-      } else {
+      } else if (!cached) {
+        // Only clear session if we had no cached user — avoids logging out on
+        // a transient network failure during the initial getSession() call.
         clearUserCache()
         set({ user: null, isAuthenticated: false, isLoading: false })
+      } else {
+        // Had a cached user but getSession returned null: could be expired or
+        // a network hiccup. Stay authenticated from cache; next API call will
+        // fail if truly expired, at which point logout() can be called.
+        set({ isLoading: false })
       }
     } catch {
-      if (!cached) set({ isLoading: false })
+      set({ isLoading: false })
+    } finally {
+      initDone = true
     }
   },
 

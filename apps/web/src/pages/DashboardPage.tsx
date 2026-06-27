@@ -109,14 +109,12 @@ const PieTooltip = ({
 export default function DashboardPage() {
   const { profiles } = useTalentStore()
   const storeActivities = useTalentStore((s) => s.activities)
-  const setFilters = useTalentStore((s) => s.setFilters)
   const { user } = useAuthStore()
   const navigate = useNavigate()
 
   const goFiltered = (status?: TalentStatus) => {
-    // Reset all filters and encode the status in the URL so TalentListPage
-    // reliably applies it even when the component is already mounted.
-    setFilters({ status: status ? [status] : undefined })
+    // Navigate with ?status= URL param. TalentListPage reads it synchronously
+    // in its filteredProfiles memo so the filter applies on the very first render.
     navigate(status ? `/talent?status=${encodeURIComponent(status)}` : '/talent')
   }
 

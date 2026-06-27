@@ -341,9 +341,6 @@ export default function Sidebar({ collapsed, onToggle, isMobile = false, mobileO
               >
                 {user?.full_name || 'User'}
               </div>
-              <div style={{ fontSize: 10, fontFamily: 'Figtree, sans-serif', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
-                Administrator
-              </div>
             </motion.div>
           )}
         </AnimatePresence>
