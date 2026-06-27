@@ -192,9 +192,16 @@ export default function TalentListPage() {
     return () => document.removeEventListener('click', handler)
   }, [showBulkStageDropdown])
 
-  // Compute filtered profiles via useMemo to avoid re-render loops
+  // Compute filtered profiles via useMemo to avoid re-render loops.
+  // Also apply the ?status= URL param directly here so dashboard-card clicks
+  // filter correctly on the FIRST render, before the useEffect can run.
   const filteredProfiles = useMemo(() => {
     let result = useTalentStore.getState().filteredProfiles()
+    const urlStatus = searchParams.get('status')
+    if (urlStatus) {
+      const statuses = urlStatus.split(',') as TalentStatus[]
+      result = result.filter((p) => statuses.includes(p.status))
+    }
     if (skillChips.length > 0) {
       const terms = skillChips.map((s) => s.toLowerCase())
       result = result.filter((p) => {
@@ -204,7 +211,7 @@ export default function TalentListPage() {
     }
     return result
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profiles, filters, skillChips])
+  }, [profiles, filters, skillChips, searchParams])
 
   // All unique skills across all profiles - for autocomplete suggestions
   const allSkillSuggestions = useMemo(() => {

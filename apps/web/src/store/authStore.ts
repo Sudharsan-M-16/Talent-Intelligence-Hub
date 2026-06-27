@@ -90,10 +90,15 @@ function clearUserCache() {
 
 let authSubscription: { unsubscribe: () => void } | null = null
 
+// Read cache synchronously at module load — before any React render.
+// This makes isLoading: false immediately when a session exists, eliminating
+// the PageLoader flash on tab switch / page reload.
+const _bootUser = readUserCache()
+
 export const useAuthStore = create<AuthStore>()((set) => ({
-  user: null,
-  isAuthenticated: false,
-  isLoading: true,
+  user: _bootUser,
+  isAuthenticated: !!_bootUser,
+  isLoading: !_bootUser,  // false instantly when cache exists
 
   init: async () => {
     if (!isSupabaseReady || !supabase) {
