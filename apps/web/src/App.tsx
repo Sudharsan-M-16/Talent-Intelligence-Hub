@@ -31,7 +31,7 @@ const ResetPasswordPage = React.lazy(() => import('./pages/ResetPasswordPage'))
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const isLoading       = useAuthStore((s) => s.isLoading)
-  if (isLoading) return <PageLoader fullScreen />
+  if (isLoading) return <div style={{ height: '100vh', background: 'var(--bg-base)' }} />
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />
 }
 
@@ -39,7 +39,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function AuthRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const isLoading       = useAuthStore((s) => s.isLoading)
-  if (isLoading) return <PageLoader fullScreen />
+  if (isLoading) return <div style={{ height: '100vh', background: 'var(--bg-base)' }} />
   if (isAuthenticated) return <Navigate to="/dashboard" replace />
   return <>{children}</>
 }
@@ -162,7 +162,7 @@ export default function App() {
     <ErrorBoundary>
       <BrowserRouter>
         <AuthInitializer>
-          <Suspense fallback={<PageLoader fullScreen />}>
+          <Suspense fallback={<div style={{ height: '100vh', background: 'var(--bg-base)' }} />}>
             <AppRoutes />
           </Suspense>
         </AuthInitializer>
