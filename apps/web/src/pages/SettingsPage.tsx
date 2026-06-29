@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { User, Tag as TagIcon, Search, Palette, AlertTriangle, Plus, Trash2, Save, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -141,9 +141,6 @@ export default function SettingsPage() {
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>{user?.full_name}</div>
                     <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{user?.email}</div>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: 99, background: 'var(--accent-dim)', color: 'var(--accent-bright)', fontSize: 11, fontWeight: 600, marginTop: 6, textTransform: 'capitalize' }}>
-                      {user?.role}
-                    </div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -154,10 +151,6 @@ export default function SettingsPage() {
                   <div>
                     <label className="form-label">Email</label>
                     <input className="input-field" defaultValue={user?.email || ''} placeholder="your@email.com" readOnly />
-                  </div>
-                  <div>
-                    <label className="form-label">Role</label>
-                    <input className="input-field" defaultValue={user?.role || ''} readOnly style={{ textTransform: 'capitalize', opacity: 0.7 }} />
                   </div>
                   <div>
                     <label className="form-label">Organization</label>
