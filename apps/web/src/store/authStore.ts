@@ -126,10 +126,11 @@ export const useAuthStore = create<AuthStore>()((set) => ({
       if (event !== 'SIGNED_IN') return
       if (!session?.user) return
 
-      // Only show loading screen if we have no user AND init hasn't completed yet.
-      // After initDone, all auth events must be silent to prevent tab-switch flash.
       const hasUser = !!useAuthStore.getState().user
-      if (!hasUser && !initDone) set({ isLoading: true })
+      // If we already have a user, this is a spurious tab-focus event or background refresh. Ignore it to prevent UI flashes.
+      if (hasUser) return
+      
+      if (!initDone) set({ isLoading: true })
       const user = await resolveUser(session.user)
       writeUserCache(user)
       set({ user, isAuthenticated: true, isLoading: false })

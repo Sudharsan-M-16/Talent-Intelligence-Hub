@@ -104,26 +104,7 @@ export const useTalentStore = create<TalentStore>()(
           ])
 
           if (profiles.length === 0) {
-            const localProfiles = get().profiles
-
-            if (localProfiles.length > 0) {
-              // Supabase is empty but the browser cache has profiles — migrate them up.
-              // This handles the case where the user had demo data in localStorage before
-              // Supabase was connected. Runs silently; failures are non-fatal.
-              await Promise.all(localProfiles.map((p) => {
-                const { id: _id, ...rest } = p
-                return createProfileInDb(
-                  { ...rest, id: crypto.randomUUID(), organization_id: orgId },
-                  orgId
-                ).catch(() => null)
-              }))
-              const [migratedProfiles, migratedTags, migratedActivities] = await Promise.all([
-                fetchProfiles(orgId),
-                fetchTags(orgId),
-                fetchActivities(orgId),
-              ])
-              set({ profiles: migratedProfiles.length > 0 ? migratedProfiles : localProfiles, tags: migratedTags.length > 0 ? migratedTags : tags, activities: migratedActivities, savedSearches })
-            } else if (userEmail === SEED_EMAIL) {
+            if (userEmail === SEED_EMAIL) {
               // Primary demo account — seed Supabase with the built-in demo profiles
               // so this account always has data regardless of localStorage state.
               await Promise.all(demoProfiles.map((p) => {
@@ -152,7 +133,8 @@ export const useTalentStore = create<TalentStore>()(
               })
             } else {
               // New user — start with a clean blank slate.
-              set({ profiles: [], tags: [], activities: [], savedSearches })
+              // Clear any leftover local data so other accounts don't see seed data.
+              set({ profiles: [], tags: [], activities: [], savedSearches: [] })
             }
           } else {
             set({ profiles, tags, activities, savedSearches })
