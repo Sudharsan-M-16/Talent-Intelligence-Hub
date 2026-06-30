@@ -1,4 +1,4 @@
-﻿import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   LayoutDashboard, Users, KanbanSquare, Star, Heart,
@@ -170,7 +170,7 @@ const PAGES: Omit<PageCardProps, 'index'>[] = [
     title: 'Advanced Search',
     path: '/search',
     description: 'Full-text search across all profile fields - name, email, skills, notes, certifications, and organization. Combine with filters and save searches for reuse.',
-    features: ['Full-text search', 'Save searches', 'Multi-filter', 'Sort results', 'âŒ˜K shortcut'],
+    features: ['Full-text search', 'Save searches', 'Multi-filter', 'Sort results', 'Search shortcut'],
   },
   {
     icon: Settings,
@@ -251,10 +251,14 @@ const FEATURES: FeatureRowProps[] = [
   },
 ]
 
+const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0
+const shortcutKey = isMac ? '⌘K' : 'Ctrl+K'
+const commandKey = isMac ? '⌘' : 'Ctrl'
+
 const SHORTCUTS = [
-  { keys: ['âŒ˜', 'K'], description: 'Open global search spotlight' },
-  { keys: ['â†‘', 'â†“'], description: 'Navigate search results' },
-  { keys: ['â†µ'], description: 'Open selected result / submit search' },
+  { keys: [commandKey, 'K'], description: 'Open global search spotlight' },
+  { keys: ['↑', '↓'], description: 'Navigate search results' },
+  { keys: ['↵'], description: 'Open selected result / submit search' },
   { keys: ['Esc'], description: 'Close search / dismiss modal' },
 ]
 
@@ -610,7 +614,7 @@ export default function AboutPage() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <Command size={10} color="var(--text-muted)" />
-          <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Press ⌘K to search anywhere</span>
+          <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Press {shortcutKey} to search anywhere</span>
         </div>
       </div>
     </div>

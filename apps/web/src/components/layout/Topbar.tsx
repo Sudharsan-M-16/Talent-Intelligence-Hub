@@ -102,6 +102,9 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
+  const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0
+  const shortcutKey = isMac ? '⌘K' : 'Ctrl+K'
+
   return (
     <header
       style={{
@@ -153,7 +156,7 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search talent... (⌘K)"
+            placeholder={`Search talent... (${shortcutKey})`}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setSearchOpen(true)}
