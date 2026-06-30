@@ -16,8 +16,6 @@ export default function PageLoader({ fullScreen }: PageLoaderProps) {
         background: fullScreen ? 'var(--bg-base, #0c0c0f)' : undefined,
       }}
     >
-      <div className="spinner" />
-      <span style={{ fontSize: 13, fontFamily: 'Figtree, sans-serif' }}>Loading...</span>
     </div>
   )
 }

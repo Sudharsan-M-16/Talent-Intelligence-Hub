@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import PageLoader from '../components/ui/PageLoader'
+
 
 /**
  * Landing page for all Supabase auth redirects:
@@ -51,5 +51,5 @@ export default function AuthCallbackPage() {
     return () => subscription.unsubscribe()
   }, [navigate])
 
-  return <PageLoader fullScreen />
+  return <div style={{ height: '100vh', background: 'var(--bg-base)' }} />
 }

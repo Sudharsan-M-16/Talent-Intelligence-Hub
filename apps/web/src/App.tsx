@@ -82,8 +82,8 @@ function AppRoutes() {
     <Routes>
       {/* Public auth routes */}
       <Route path="/login" element={<AuthRoute><LoginPage /></AuthRoute>} />
-      <Route path="/auth/callback" element={<Suspense fallback={<PageLoader fullScreen />}><AuthCallbackPage /></Suspense>} />
-      <Route path="/reset-password" element={<Suspense fallback={<PageLoader fullScreen />}><ResetPasswordPage /></Suspense>} />
+      <Route path="/auth/callback" element={<Suspense fallback={<div style={{ height: '100vh', background: 'var(--bg-base)' }} />}><AuthCallbackPage /></Suspense>} />
+      <Route path="/reset-password" element={<Suspense fallback={<div style={{ height: '100vh', background: 'var(--bg-base)' }} />}><ResetPasswordPage /></Suspense>} />
 
       {/* Protected app shell */}
       <Route
