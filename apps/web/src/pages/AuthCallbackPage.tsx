@@ -24,14 +24,16 @@ export default function AuthCallbackPage() {
     }
 
     // Supabase exchanges the code from the URL automatically on getSession()
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error || !session) {
+        // If there's no session and no hash/search in window.location, redirect to login
+        if (!window.location.hash && !window.location.search) {
+          navigate('/login', { replace: true })
+        }
+      } else if (session?.user) {
         // Session already available — authStore subscription will set user + org.
         // Navigate to dashboard; ProtectedRoute shows PageLoader until auth resolves.
         navigate('/dashboard', { replace: true })
-      } else {
-        // Session not yet available — wait for the onAuthStateChange event
-        // (code exchange may still be in-flight)
       }
     })
 

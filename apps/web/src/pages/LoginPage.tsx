@@ -278,6 +278,35 @@ function Divider() {
   )
 }
 
+function Input({ id, type, placeholder, value, onChange, pr, onClearErr }: {
+  id: string; type: string; placeholder: string
+  value: string; onChange: (v: string) => void; pr?: number; onClearErr?: () => void
+}) {
+  return (
+    <input
+      id={id} type={type} placeholder={placeholder}
+      value={value}
+      onChange={e => { onChange(e.target.value); onClearErr?.() }}
+      autoComplete={id}
+      style={{ ...inputBase, ...(pr ? { paddingRight: pr } : {}) }}
+      onFocus={e => { e.target.style.borderColor = C.accentFocus; e.target.style.boxShadow = `${C.accentShadow} 0 0 0 3px` }}
+      onBlur={e  => { e.target.style.borderColor = C.border;      e.target.style.boxShadow = 'none' }}
+    />
+  )
+}
+
+function SubmitBtn({ label, disabled, loading }: { label: string; disabled?: boolean; loading?: boolean }) {
+  return (
+    <motion.button type="submit" disabled={disabled || loading}
+      whileHover={(!disabled && !loading) ? { scale: 1.01, boxShadow: `${C.accent}55 0 0 22px 0` } : {}}
+      whileTap={(!disabled && !loading) ? { scale: 0.99 } : {}}
+      style={{ width: '100%', marginTop: 6, background: C.accent, color: '#fff', border: 'none', borderRadius: 12, padding: '13px', fontSize: 14, fontWeight: 600, fontFamily: 'inherit', cursor: (disabled || loading) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, letterSpacing: '-0.01em', boxShadow: `${C.accentGlow} 0 0 16px 0`, transition: 'background 0.15s ease', opacity: (disabled && !loading) ? 0.5 : 1 }}
+    >
+      {loading ? <><Spinner /> Processing…</> : <><span>{label}</span><ArrowRight size={14} /></>}
+    </motion.button>
+  )
+}
+
 function GoogleIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24">
@@ -360,31 +389,7 @@ export default function LoginPage() {
     catch (err) { setError(err instanceof Error ? err.message : 'Google sign-in failed.'); setLoading(false) }
   }
 
-  // ── Shared input renderer ────────────────────────────────────────────────────
-  const Input = ({ id, type, placeholder, value, onChange, pr }: {
-    id: string; type: string; placeholder: string
-    value: string; onChange: (v: string) => void; pr?: number
-  }) => (
-    <input
-      id={id} type={type} placeholder={placeholder}
-      value={value}
-      onChange={e => { onChange(e.target.value); clearErr() }}
-      autoComplete={id}
-      style={{ ...inputBase, ...(pr ? { paddingRight: pr } : {}) }}
-      onFocus={e => { e.target.style.borderColor = C.accentFocus; e.target.style.boxShadow = `${C.accentShadow} 0 0 0 3px` }}
-      onBlur={e  => { e.target.style.borderColor = C.border;      e.target.style.boxShadow = 'none' }}
-    />
-  )
-
-  const SubmitBtn = ({ label, disabled }: { label: string; disabled?: boolean }) => (
-    <motion.button type="submit" disabled={disabled || loading}
-      whileHover={(!disabled && !loading) ? { scale: 1.01, boxShadow: `${C.accent}55 0 0 22px 0` } : {}}
-      whileTap={(!disabled && !loading) ? { scale: 0.99 } : {}}
-      style={{ width: '100%', marginTop: 6, background: C.accent, color: '#fff', border: 'none', borderRadius: 12, padding: '13px', fontSize: 14, fontWeight: 600, fontFamily: 'inherit', cursor: (disabled || loading) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, letterSpacing: '-0.01em', boxShadow: `${C.accentGlow} 0 0 16px 0`, transition: 'background 0.15s ease', opacity: (disabled && !loading) ? 0.5 : 1 }}
-    >
-      {loading ? <><Spinner /> Processing…</> : <><span>{label}</span><ArrowRight size={14} /></>}
-    </motion.button>
-  )
+  // ── Handlers ────────────────────────────────────────────────────────────────
 
   const strength = view === 'signup' ? pwStrength(pw) : null
 
@@ -505,17 +510,17 @@ export default function LoginPage() {
                   <form onSubmit={doLogin} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <div>
                       <FieldLabel>Email address</FieldLabel>
-                      <Input id="email" type="email" placeholder="you@company.com" value={email} onChange={setEmail} />
+                      <Input id="email" type="email" placeholder="you@company.com" value={email} onChange={setEmail} onClearErr={clearErr} />
                     </div>
                     <div>
                       <FieldLabel>Password</FieldLabel>
                       <div style={{ position: 'relative' }}>
-                        <Input id="current-password" type={showPw ? 'text' : 'password'} placeholder="••••••••" value={pw} onChange={setPw} pr={40} />
+                        <Input id="current-password" type={showPw ? 'text' : 'password'} placeholder="••••••••" value={pw} onChange={setPw} pr={40} onClearErr={clearErr} />
                         <PwToggle show={showPw} onToggle={() => setShowPw(v => !v)} />
                       </div>
                     </div>
                     <ErrorMsg msg={error} />
-                    <SubmitBtn label="Sign in" />
+                    <SubmitBtn label="Sign in" loading={loading} />
                   </form>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 14 }}>
@@ -545,16 +550,16 @@ export default function LoginPage() {
                   <form onSubmit={doSignup} style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
                     <div>
                       <FieldLabel>Full name</FieldLabel>
-                      <Input id="name" type="text" placeholder="Alex Johnson" value={name} onChange={setName} />
+                      <Input id="name" type="text" placeholder="Alex Johnson" value={name} onChange={setName} onClearErr={clearErr} />
                     </div>
                     <div>
                       <FieldLabel>Email address</FieldLabel>
-                      <Input id="email" type="email" placeholder="you@company.com" value={email} onChange={setEmail} />
+                      <Input id="email" type="email" placeholder="you@company.com" value={email} onChange={setEmail} onClearErr={clearErr} />
                     </div>
                     <div>
                       <FieldLabel>Password</FieldLabel>
                       <div style={{ position: 'relative' }}>
-                        <Input id="new-password" type={showPw ? 'text' : 'password'} placeholder="At least 8 characters" value={pw} onChange={setPw} pr={40} />
+                        <Input id="new-password" type={showPw ? 'text' : 'password'} placeholder="At least 8 characters" value={pw} onChange={setPw} pr={40} onClearErr={clearErr} />
                         <PwToggle show={showPw} onToggle={() => setShowPw(v => !v)} />
                       </div>
                       {strength && pw && (
@@ -569,7 +574,7 @@ export default function LoginPage() {
                     <div>
                       <FieldLabel>Confirm password</FieldLabel>
                       <div style={{ position: 'relative' }}>
-                        <Input id="confirm-password" type={showCf ? 'text' : 'password'} placeholder="Repeat password" value={confirm} onChange={setConfirm} pr={40} />
+                        <Input id="confirm-password" type={showCf ? 'text' : 'password'} placeholder="Repeat password" value={confirm} onChange={setConfirm} pr={40} onClearErr={clearErr} />
                         <PwToggle show={showCf} onToggle={() => setShowCf(v => !v)} />
                       </div>
                       {confirm && pw && confirm === pw && (
@@ -580,7 +585,7 @@ export default function LoginPage() {
                       )}
                     </div>
                     <ErrorMsg msg={error} />
-                    <SubmitBtn label="Create account" disabled={!isSupabaseReady} />
+                    <SubmitBtn label="Create account" disabled={!isSupabaseReady} loading={loading} />
                     {!isSupabaseReady && <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.28)', textAlign: 'center', margin: '2px 0 0' }}>Requires Supabase · see SETUP.md</p>}
                   </form>
                   <div style={{ textAlign: 'center', marginTop: 14 }}>
@@ -599,10 +604,10 @@ export default function LoginPage() {
                   <form onSubmit={doForgot} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <div>
                       <FieldLabel>Email address</FieldLabel>
-                      <Input id="email" type="email" placeholder="you@company.com" value={email} onChange={setEmail} />
+                      <Input id="email" type="email" placeholder="you@company.com" value={email} onChange={setEmail} onClearErr={clearErr} />
                     </div>
                     <ErrorMsg msg={error} />
-                    <SubmitBtn label="Send reset link" disabled={!isSupabaseReady} />
+                    <SubmitBtn label="Send reset link" disabled={!isSupabaseReady} loading={loading} />
                     {!isSupabaseReady && <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.28)', textAlign: 'center', margin: '2px 0 0' }}>Requires Supabase · see SETUP.md</p>}
                   </form>
                   <div style={{ textAlign: 'center', marginTop: 14 }}>
